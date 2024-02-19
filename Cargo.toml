@@ -3,3 +3,7 @@ name = "cpt"
 description = "Convoluted Pipe Dream"
 version = "0.0.1"
 edition = "2021"
+
+[dependencies]
+async-trait = "0.1.77"
+futures = "0.3.30"
