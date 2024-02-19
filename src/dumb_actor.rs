@@ -8,9 +8,9 @@ pub struct DumbActor {
 #[async_trait]
 impl Actor for DumbActor {
     async fn act(&self, _battle: &Battle, _character_id: CharacterId) -> ActionResult {
-        ActionResult {
+        Ok(ActionRequest {
             description: "attacking".into(),
-        }
+        })
     }
 
     fn get_character_id(&self) -> CharacterId {

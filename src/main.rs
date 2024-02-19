@@ -3,7 +3,7 @@ use futures::executor::block_on;
 
 fn main() {
     println!("Hello, world!");
-    let a = Box::new(DumbActor {
+    let a = Box::new(TerminalActor {
         character: Character {
             id: 0,
             name: "Person A".into(),

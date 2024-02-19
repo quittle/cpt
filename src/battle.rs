@@ -2,10 +2,6 @@ use crate::*;
 
 type TeamId = u64;
 
-pub struct ActionResult {
-    pub description: String,
-}
-
 pub struct Team {
     pub id: TeamId,
 }
@@ -52,7 +48,12 @@ impl Battle {
                 .require_actor(turn.character)
                 .act(self, turn.character)
                 .await;
-            println!("Result {}", action_result.description);
+            println!(
+                "Result {}",
+                action_result
+                    .map(|result| result.description)
+                    .unwrap_or_else(|result| result.message)
+            );
         }
     }
 }
