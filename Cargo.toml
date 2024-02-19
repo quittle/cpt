@@ -1,5 +1,5 @@
 [package]
-name = "cpt"
+name = "cpd"
 description = "Convoluted Pipe Dream"
 version = "0.0.1"
 edition = "2021"

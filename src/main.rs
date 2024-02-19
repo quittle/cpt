@@ -1,4 +1,4 @@
-use cpt::*;
+use cpd::*;
 use futures::executor::block_on;
 
 fn main() {
