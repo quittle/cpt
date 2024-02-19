@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -eu
+set -o pipefail
+
+cargo build
+cargo test
+cargo clippy
+cargo doc
