@@ -23,27 +23,26 @@ pub struct Battle {
 impl Battle {
     fn build_turns(&self) -> Vec<Turn> {
         let mut ret = vec![];
-        for (team_id, actor) in &self.actors {
+        for (_team_id, actor) in &self.actors {
             ret.push(Turn {
                 character: actor.get_character_id(),
             });
         }
-        return ret;
+        ret
     }
 
-    fn get_actor(&self, character_id: CharacterId) -> Option<&Box<dyn Actor>> {
-        for (team_id, actor) in &self.actors {
+    fn get_actor(&self, character_id: CharacterId) -> Option<&dyn Actor> {
+        for (_team_id, actor) in &self.actors {
             if actor.get_character_id() == character_id {
-                return Some(actor);
+                return Some(actor.as_ref());
             }
         }
-        return None;
+        None
     }
 
-    fn require_actor(&self, character_id: CharacterId) -> &Box<dyn Actor> {
-        self.get_actor(character_id).expect(&format!(
-            "Unable to find actor with character id: {character_id}"
-        ))
+    fn require_actor(&self, character_id: CharacterId) -> &dyn Actor {
+        self.get_actor(character_id)
+            .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
     }
 
     pub async fn advance(&mut self) {
@@ -54,11 +53,6 @@ impl Battle {
                 .act(self, turn.character)
                 .await;
             println!("Result {}", action_result.description);
-
-            // turn.action(&mut self, turn.character);
-            // println!("Turn {}", turn.action);
-            // turn.action(turn.character);
         }
-        // for &mut character in self.characeters {}
     }
 }

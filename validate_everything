@@ -3,7 +3,10 @@
 set -eu
 set -o pipefail
 
-cargo build
-cargo test
-cargo clippy
+# export RUSTFLAGS="${RUSTFLAGS:-} -D warnings"
+
+cargo fmt --all
+cargo build --all
+cargo test --all
+cargo clippy --all-targets --all-features -- -D warnings
 cargo doc
