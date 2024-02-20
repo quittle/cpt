@@ -30,24 +30,27 @@ impl TerminalActor {
                 }
             })
             .collect();
-        let mut target: Option<CharacterId> = None;
-        while target.is_none() || !valid_targets.contains(&target.unwrap_or(CharacterId::INVALID)) {
-            let mut line = String::new();
+        loop {
             print!(
                 "Who should {}({}) attack? ",
                 self.character.name, self.character.id
             );
             io::stdout().flush()?;
+
+            let mut line = String::new();
             io::stdin().read_line(&mut line)?;
-            target = CharacterId::parse(line.trim());
+            if let Some(target) = CharacterId::parse(line.trim()) {
+                if valid_targets.contains(&target) {
+                    return Ok(target);
+                }
+            }
         }
-        Ok(target.unwrap())
     }
 }
 
 #[async_trait]
 impl Actor for TerminalActor {
-    async fn act(&self, battle: &Battle, _character_id: CharacterId) -> ActionResult {
+    async fn act(&self, battle: &Battle) -> ActionResult {
         println!();
 
         for team in &battle.teams {

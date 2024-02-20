@@ -1,6 +1,6 @@
 use crate::*;
 
-type TeamId = u64;
+DeclareWrappedType!(TeamId, id, u64);
 
 pub struct Team {
     pub name: String,
@@ -59,10 +59,7 @@ impl Battle {
     pub async fn advance(&mut self) {
         let turns = self.build_turns();
         for turn in turns {
-            let action_result = self
-                .require_actor(turn.character)
-                .act(self, turn.character)
-                .await;
+            let action_result = self.require_actor(turn.character).act(self).await;
             match action_result {
                 Ok(request) => match request.action {
                     Action::Pass => {}

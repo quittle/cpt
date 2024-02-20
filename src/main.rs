@@ -7,8 +7,8 @@ fn main() {
             id: CharacterId::new(0),
             name: "Person A".into(),
             race: CharacterRace::Human,
-            base_attack: 1,
-            health: 2,
+            base_attack: Attack::new(1),
+            health: Health::new(2),
         },
     });
     let b = Box::new(DumbActor {
@@ -16,20 +16,20 @@ fn main() {
             id: CharacterId::new(1),
             name: "Person B".into(),
             race: CharacterRace::Human,
-            base_attack: 2,
-            health: 5,
+            base_attack: Attack::new(2),
+            health: Health::new(5),
         },
     });
     let mut battle = Battle {
-        actors: vec![(0, a), (1, b)],
+        actors: vec![(TeamId::new(0), a), (TeamId::new(1), b)],
         teams: vec![
             Team {
                 name: "Player".into(),
-                id: 0,
+                id: TeamId::new(0),
             },
             Team {
                 name: "Computer".into(),
-                id: 1,
+                id: TeamId::new(1),
             },
         ],
     };

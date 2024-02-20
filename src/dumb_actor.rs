@@ -7,9 +7,9 @@ pub struct DumbActor {
 
 #[async_trait]
 impl Actor for DumbActor {
-    async fn act(&self, _battle: &Battle, _character_id: CharacterId) -> ActionResult {
+    async fn act(&self, _battle: &Battle) -> ActionResult {
         Ok(ActionRequest {
-            description: "attacking".into(),
+            description: "Doing Nothing".into(),
             action: Action::Pass,
         })
     }
