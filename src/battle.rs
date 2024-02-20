@@ -3,6 +3,7 @@ use crate::*;
 type TeamId = u64;
 
 pub struct Team {
+    pub name: String,
     pub id: TeamId,
 }
 
@@ -21,7 +22,7 @@ impl Battle {
         let mut ret = vec![];
         for (_team_id, actor) in &self.actors {
             ret.push(Turn {
-                character: actor.get_character_id(),
+                character: actor.get_character().id,
             });
         }
         ret
@@ -29,7 +30,7 @@ impl Battle {
 
     fn get_actor(&self, character_id: CharacterId) -> Option<&dyn Actor> {
         for (_team_id, actor) in &self.actors {
-            if actor.get_character_id() == character_id {
+            if actor.get_character().id == character_id {
                 return Some(actor.as_ref());
             }
         }
@@ -41,6 +42,20 @@ impl Battle {
             .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
     }
 
+    fn get_mut_actor(&mut self, character_id: CharacterId) -> Option<&mut dyn Actor> {
+        for (_team_id, actor) in &mut self.actors {
+            if actor.get_character().id == character_id {
+                return Some(actor.as_mut());
+            }
+        }
+        None
+    }
+
+    fn require_mut_actor(&mut self, character_id: CharacterId) -> &mut dyn Actor {
+        self.get_mut_actor(character_id)
+            .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
+    }
+
     pub async fn advance(&mut self) {
         let turns = self.build_turns();
         for turn in turns {
@@ -48,12 +63,18 @@ impl Battle {
                 .require_actor(turn.character)
                 .act(self, turn.character)
                 .await;
-            println!(
-                "Result {}",
-                action_result
-                    .map(|result| result.description)
-                    .unwrap_or_else(|result| result.message)
-            );
+            match action_result {
+                Ok(request) => match request.action {
+                    Action::Pass => {}
+                    Action::AttackCharacter(target, damage) => {
+                        self.require_mut_actor(target)
+                            .damage(turn.character, damage);
+                    }
+                },
+                Err(failure) => {
+                    println!("Error processing {}: {}", turn.character, failure.message);
+                }
+            }
         }
     }
 }
