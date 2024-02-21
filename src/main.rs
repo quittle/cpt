@@ -8,7 +8,7 @@ fn main() {
             name: "Person A".into(),
             race: CharacterRace::Human,
             base_attack: Attack::new(1),
-            health: Health::new(2),
+            health: Health::new(20),
         },
     });
     let b = Box::new(DumbActor {
@@ -33,8 +33,6 @@ fn main() {
             },
         ],
     };
-    while battle.has_more_than_one_team_alive() {
-        block_on(battle.advance());
-    }
+    block_on(battle.run_to_completion());
     println!("Game over");
 }

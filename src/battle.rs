@@ -18,6 +18,24 @@ pub struct Battle {
 }
 
 impl Battle {
+    pub fn get_team_for_actor(&self, actor: &dyn Actor) -> Option<TeamId> {
+        for (team_id, other_actor) in &self.actors {
+            if actor.get_character().id == other_actor.get_character().id {
+                return Some(*team_id);
+            }
+        }
+        None
+    }
+
+    pub fn get_team_from_id(&self, id: TeamId) -> Option<&Team> {
+        for team in &self.teams {
+            if team.id == id {
+                return Some(team);
+            }
+        }
+        None
+    }
+
     fn build_turns(&self) -> Vec<Turn> {
         let mut ret = vec![];
         for (_team_id, actor) in &self.actors {
@@ -96,6 +114,12 @@ impl Battle {
             if !self.has_more_than_one_team_alive() {
                 return;
             }
+        }
+    }
+
+    pub async fn run_to_completion(&mut self) {
+        while self.has_more_than_one_team_alive() {
+            self.advance().await;
         }
     }
 }
