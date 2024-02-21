@@ -33,7 +33,8 @@ fn main() {
             },
         ],
     };
-    loop {
+    while battle.has_more_than_one_team_alive() {
         block_on(battle.advance());
     }
+    println!("Game over");
 }

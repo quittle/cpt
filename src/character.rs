@@ -34,3 +34,9 @@ pub struct Character {
 
     pub health: Health,
 }
+
+impl Character {
+    pub fn is_dead(&self) -> bool {
+        self.health.health == 0
+    }
+}

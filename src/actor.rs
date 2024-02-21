@@ -9,7 +9,8 @@ pub trait Actor: Sync {
 
     /// Receive damage. Override to perform reactions/dodge/etc
     fn damage(&mut self, _attacker: CharacterId, damage: Attack) {
-        self.get_mut_character().health -= damage;
+        let character = self.get_mut_character();
+        character.health -= damage;
     }
 
     /// Get the underlying `Character`

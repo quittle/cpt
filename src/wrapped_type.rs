@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! DeclareWrappedType {
     ($struct_name:ident, $field_name:ident, $field_type:ty) => {
-        #[derive(PartialEq, Copy, Clone)]
+        #[derive(PartialEq, Copy, Clone, Eq, Hash)]
         pub struct $struct_name {
             $field_name: $field_type,
         }

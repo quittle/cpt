@@ -3,8 +3,8 @@ use crate::*;
 DeclareWrappedType!(TeamId, id, u64);
 
 pub struct Team {
-    pub name: String,
     pub id: TeamId,
+    pub name: String,
 }
 
 struct Turn {
@@ -21,6 +21,10 @@ impl Battle {
     fn build_turns(&self) -> Vec<Turn> {
         let mut ret = vec![];
         for (_team_id, actor) in &self.actors {
+            if actor.get_character().is_dead() {
+                continue;
+            }
+
             ret.push(Turn {
                 character: actor.get_character().id,
             });
@@ -56,10 +60,27 @@ impl Battle {
             .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
     }
 
+    pub fn has_more_than_one_team_alive(&self) -> bool {
+        let mut cur_id = None;
+        for (team_id, actor) in &self.actors {
+            if !actor.get_character().is_dead() {
+                if cur_id.is_some() && cur_id != Some(team_id) {
+                    return true;
+                }
+                cur_id = Some(team_id);
+            }
+        }
+        false
+    }
+
     pub async fn advance(&mut self) {
         let turns = self.build_turns();
         for turn in turns {
-            let action_result = self.require_actor(turn.character).act(self).await;
+            let actor = self.require_actor(turn.character);
+            if actor.get_character().is_dead() {
+                continue;
+            }
+            let action_result = actor.act(self).await;
             match action_result {
                 Ok(request) => match request.action {
                     Action::Pass => {}
@@ -71,6 +92,9 @@ impl Battle {
                 Err(failure) => {
                     println!("Error processing {}: {}", turn.character, failure.message);
                 }
+            }
+            if !self.has_more_than_one_team_alive() {
+                return;
             }
         }
     }
