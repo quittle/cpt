@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::*;
 
 pub enum Action {
@@ -14,12 +16,26 @@ pub struct ActionFailure {
     pub message: String,
 }
 
-impl From<std::io::Error> for ActionFailure {
+pub enum ActionError {
+    Failure(ActionFailure),
+    Exit(i32),
+}
+
+impl From<std::io::Error> for ActionError {
     fn from(value: std::io::Error) -> Self {
-        ActionFailure {
+        Self::Failure(ActionFailure {
             message: value.to_string(),
+        })
+    }
+}
+
+impl Display for ActionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Failure(failure) => f.write_str(&failure.message),
+            Self::Exit(code) => write!(f, "Exit Code {code}"),
         }
     }
 }
 
-pub type ActionResult = Result<ActionRequest, ActionFailure>;
+pub type ActionResult = Result<ActionRequest, ActionError>;

@@ -7,3 +7,6 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.77"
 futures = "0.3.30"
+libc = "0.2.153"
+term_size = "0.3.2"
+termion = "3.0.0"

@@ -8,10 +8,9 @@ pub struct DumbActor {
 #[async_trait]
 impl Actor for DumbActor {
     async fn act(&self, battle: &Battle) -> ActionResult {
-        let my_team = battle.get_team_for_actor(self).expect(&format!(
-            "Failed to find team for self {}",
-            self.character.id
-        ));
+        let my_team = battle
+            .get_team_for_actor(self)
+            .unwrap_or_else(|| panic!("Failed to find team for self {}", self.character.id));
         for (team_id, actor) in &battle.actors {
             if &my_team != team_id {
                 return Ok(ActionRequest {

@@ -1,13 +1,22 @@
 use crate::*;
 use async_trait::async_trait;
-use std::io::{self, Write};
+use std::io::Write;
+use termion::{
+    event::{Event, Key},
+    input::TermRead,
+    raw::IntoRawMode,
+};
 
 pub struct TerminalActor {
     pub character: Character,
 }
 
 impl TerminalActor {
-    fn get_valid_target(&self, battle: &Battle) -> Result<CharacterId, ActionFailure> {
+    fn get_valid_target(
+        &self,
+        blocks: &mut Vec<TerminalBlock>,
+        battle: &Battle,
+    ) -> Result<CharacterId, ActionError> {
         let team_id = battle
             .actors
             .iter()
@@ -30,20 +39,56 @@ impl TerminalActor {
                 }
             })
             .collect();
-        loop {
-            print!(
+        blocks.push(TerminalBlock::new_with_suffix(
+            format!(
                 "Who should {}({}) attack? ",
                 self.character.name, self.character.id
-            );
-            io::stdout().flush()?;
+            ),
+            String::new(),
+        ));
+        loop {
+            TerminalUi::draw(blocks)?;
 
-            let mut line = String::new();
-            io::stdin().read_line(&mut line)?;
-            if let Some(target) = CharacterId::parse(line.trim()) {
+            let (_raw_out, _raw_err) = (
+                std::io::stdout().into_raw_mode(),
+                std::io::stderr().into_raw_mode(),
+            );
+
+            fn last_string(blocks: &mut [TerminalBlock]) -> &mut String {
+                &mut blocks.last_mut().unwrap().suffix.as_mut().unwrap().contents
+            }
+
+            for c in std::io::stdin().events() {
+                let evt = c.unwrap();
+                match evt {
+                    Event::Key(Key::Char(c)) => {
+                        if c == '\n' {
+                            break;
+                        }
+                        last_string(blocks).push(c);
+                        TerminalUi::draw(blocks)?;
+                    }
+                    Event::Key(Key::Backspace) => {
+                        last_string(blocks).pop();
+                        TerminalUi::draw(blocks)?;
+                    }
+                    Event::Key(Key::Ctrl('c' | 'd')) => {
+                        println!("Exiting");
+                        return Err(ActionError::Exit(13));
+                    }
+                    Event::Key(k) => {
+                        write!(std::io::stdout(), "Key: {:?}", k)?;
+                        std::io::stdout().flush().unwrap();
+                    }
+                    _ => (),
+                };
+            }
+            if let Some(target) = CharacterId::parse(last_string(blocks).trim()) {
                 if valid_targets.contains(&target) {
                     return Ok(target);
                 }
             }
+            last_string(blocks).clear();
         }
     }
 }
@@ -51,24 +96,25 @@ impl TerminalActor {
 #[async_trait]
 impl Actor for TerminalActor {
     async fn act(&self, battle: &Battle) -> ActionResult {
-        println!();
+        let mut blocks = vec![];
 
         for team in &battle.teams {
-            println!("Team: {}", team.name);
+            blocks.push(TerminalBlock::new(format!("Team: {}", team.name)));
+
             for (team_id, actor) in &battle.actors {
                 if team_id != &team.id {
                     continue;
                 }
-                println!(
+                blocks.push(TerminalBlock::new(format!(
                     "- {} ({}). Health: {}",
                     actor.get_character().name,
                     actor.get_character().id,
                     actor.get_character().health,
-                );
+                )));
             }
         }
 
-        let target: CharacterId = self.get_valid_target(battle)?;
+        let target: CharacterId = self.get_valid_target(&mut blocks, battle)?;
         Ok(ActionRequest {
             description: target.to_string(),
             action: Action::AttackCharacter(target, self.character.base_attack),

@@ -28,12 +28,7 @@ impl Battle {
     }
 
     pub fn get_team_from_id(&self, id: TeamId) -> Option<&Team> {
-        for team in &self.teams {
-            if team.id == id {
-                return Some(team);
-            }
-        }
-        None
+        self.teams.iter().find(|&team| team.id == id)
     }
 
     fn build_turns(&self) -> Vec<Turn> {
@@ -107,8 +102,11 @@ impl Battle {
                             .damage(turn.character, damage);
                     }
                 },
-                Err(failure) => {
+                Err(ActionError::Failure(failure)) => {
                     println!("Error processing {}: {}", turn.character, failure.message);
+                }
+                Err(ActionError::Exit(exit_code)) => {
+                    std::process::exit(exit_code);
                 }
             }
             if !self.has_more_than_one_team_alive() {
