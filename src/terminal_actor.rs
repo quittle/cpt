@@ -1,6 +1,5 @@
 use crate::*;
 use async_trait::async_trait;
-use std::io::Write;
 use termion::{
     event::{Event, Key},
     input::TermRead,
@@ -39,13 +38,17 @@ impl TerminalActor {
                 }
             })
             .collect();
-        blocks.push(TerminalBlock::new_with_suffix(
-            format!(
+        blocks.push(TerminalBlock {
+            prefix: TerminalSpan {
+                contents: "".into(),
+                color: Some(Box::new(termion::color::Yellow)),
+            },
+            contents: format!(
                 "Who should {}({}) attack? ",
                 self.character.name, self.character.id
             ),
-            String::new(),
-        ));
+            ..Default::default()
+        });
         loop {
             TerminalUi::draw(blocks)?;
 
@@ -54,8 +57,8 @@ impl TerminalActor {
                 std::io::stderr().into_raw_mode(),
             );
 
-            fn last_string(blocks: &mut [TerminalBlock]) -> &mut String {
-                &mut blocks.last_mut().unwrap().suffix.as_mut().unwrap().contents
+            fn last_block(blocks: &mut [TerminalBlock]) -> &mut TerminalBlock {
+                blocks.last_mut().unwrap()
             }
 
             for c in std::io::stdin().events() {
@@ -65,30 +68,32 @@ impl TerminalActor {
                         if c == '\n' {
                             break;
                         }
-                        last_string(blocks).push(c);
-                        TerminalUi::draw(blocks)?;
+                        last_block(blocks).suffix.contents.push(c);
                     }
                     Event::Key(Key::Backspace) => {
-                        last_string(blocks).pop();
-                        TerminalUi::draw(blocks)?;
+                        last_block(blocks).suffix.contents.pop();
                     }
                     Event::Key(Key::Ctrl('c' | 'd')) => {
                         println!("Exiting");
                         return Err(ActionError::Exit(13));
                     }
                     Event::Key(k) => {
-                        write!(std::io::stdout(), "Key: {:?}", k)?;
-                        std::io::stdout().flush().unwrap();
+                        last_block(blocks).prefix.contents = format!("Key: {:?} ", k);
                     }
                     _ => (),
                 };
+                TerminalUi::draw(blocks)?;
             }
-            if let Some(target) = CharacterId::parse(last_string(blocks).trim()) {
+            if let Some(target) = CharacterId::parse(last_block(blocks).suffix.contents.trim()) {
                 if valid_targets.contains(&target) {
                     return Ok(target);
+                } else {
+                    last_block(blocks).prefix.contents = "Invalid character id ".into();
                 }
+            } else {
+                last_block(blocks).prefix.contents = "Unknown command ".into();
             }
-            last_string(blocks).clear();
+            last_block(blocks).suffix.contents.clear();
         }
     }
 }

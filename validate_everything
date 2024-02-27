@@ -3,6 +3,7 @@
 set -eu
 set -o pipefail
 
+export RUSTFLAGS="-D warnings"
 cargo fmt --all
 cargo build --all
 cargo test --all
