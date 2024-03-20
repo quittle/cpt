@@ -70,11 +70,10 @@ pub struct TerminalBlock {
 }
 
 impl TerminalBlock {
-    pub fn new(contents: String) -> Self {
+    pub fn new(contents: impl AsRef<str>) -> Self {
         Self {
-            prefix: Default::default(),
-            contents,
-            suffix: Default::default(),
+            contents: contents.as_ref().to_string(),
+            ..Default::default()
         }
     }
 }

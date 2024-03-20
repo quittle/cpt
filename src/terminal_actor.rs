@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::*;
 use async_trait::async_trait;
 use termion::{
@@ -14,52 +16,30 @@ impl TerminalActor {
     fn get_valid_target(
         &self,
         blocks: &mut Vec<TerminalBlock>,
+        mut menu: BattleMenu,
         battle: &Battle,
     ) -> Result<CharacterId, ActionError> {
-        let team_id = battle
-            .actors
-            .iter()
-            .find_map(|(team_id, actor)| {
-                if actor.get_character().id == self.character.id {
-                    Some(team_id)
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| panic!("Actor {} not found in battle", self.character.id));
-        let valid_targets: Vec<CharacterId> = battle
-            .actors
-            .iter()
-            .filter_map(|(actor_team_id, actor)| {
-                if team_id == actor_team_id {
-                    None
-                } else {
-                    Some(actor.get_character().id)
-                }
-            })
-            .collect();
+        blocks.push(TerminalBlock::default());
         blocks.push(TerminalBlock {
             prefix: TerminalSpan {
                 contents: "".into(),
                 color: Some(Box::new(termion::color::Yellow)),
             },
-            contents: format!(
-                "Who should {}({}) attack? ",
-                self.character.name, self.character.id
-            ),
+            contents: "".into(),
             ..Default::default()
         });
         loop {
-            TerminalUi::draw(blocks)?;
-
-            let (_raw_out, _raw_err) = (
-                std::io::stdout().into_raw_mode(),
-                std::io::stderr().into_raw_mode(),
-            );
-
             fn last_block(blocks: &mut [TerminalBlock]) -> &mut TerminalBlock {
                 blocks.last_mut().unwrap()
             }
+
+            menu.show(last_block(blocks));
+            TerminalUi::draw(blocks)?;
+
+            let (_raw_out, _raw_err) = (
+                std::io::stdout().into_raw_mode()?,
+                std::io::stderr().into_raw_mode()?,
+            );
 
             for c in std::io::stdin().events() {
                 let evt = c.unwrap();
@@ -84,11 +64,22 @@ impl TerminalActor {
                 };
                 TerminalUi::draw(blocks)?;
             }
-            if let Some(target) = CharacterId::parse(last_block(blocks).suffix.contents.trim()) {
-                if valid_targets.contains(&target) {
-                    return Ok(target);
-                } else {
-                    last_block(blocks).prefix.contents = "Invalid character id ".into();
+            if let Some(output) = menu.select_by_name(&last_block(blocks).suffix.contents) {
+                last_block(blocks).prefix.contents.clear();
+                match output {
+                    BattleMenuOutput::Pass => {
+                        return Err(ActionError::Failure(ActionFailure { message: "".into() }))
+                    }
+                    BattleMenuOutput::Attack(name) => {
+                        for (_team_id, actor) in &battle.actors {
+                            if actor.get_character().name == name {
+                                return Ok(actor.get_character().id);
+                            }
+                        }
+                        return Err(ActionError::Failure(ActionFailure {
+                            message: "Failed to find character id for {name}".into(),
+                        }));
+                    }
                 }
             } else {
                 last_block(blocks).prefix.contents = "Unknown command ".into();
@@ -103,6 +94,7 @@ impl Actor for TerminalActor {
     async fn act(&self, battle: &Battle) -> ActionResult {
         let mut blocks = vec![];
 
+        let mut enemies = vec![];
         for team in &battle.teams {
             blocks.push(TerminalBlock::new(format!("Team: {}", team.name)));
 
@@ -110,6 +102,7 @@ impl Actor for TerminalActor {
                 if team_id != &team.id {
                     continue;
                 }
+                enemies.push(actor.get_character().name.clone());
                 blocks.push(TerminalBlock::new(format!(
                     "- {} ({}). Health: {}",
                     actor.get_character().name,
@@ -119,7 +112,14 @@ impl Actor for TerminalActor {
             }
         }
 
-        let target: CharacterId = self.get_valid_target(&mut blocks, battle)?;
+        blocks.push(TerminalBlock::default());
+
+        let menu = BattleMenu::new(vec![
+            Rc::new(AttackMenu { targets: enemies }),
+            Rc::new(PassMenuItem {}),
+        ]);
+
+        let target: CharacterId = self.get_valid_target(&mut blocks, menu, battle)?;
         Ok(ActionRequest {
             description: target.to_string(),
             action: Action::AttackCharacter(target, self.character.base_attack),
