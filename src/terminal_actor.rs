@@ -46,6 +46,7 @@ impl Actor for TerminalActor {
     async fn act(&self, battle: &Battle) -> ActionResult {
         let mut blocks = vec![];
 
+        let my_team = battle.get_team_for_actor(self);
         let mut enemies = vec![];
         for team in &battle.teams {
             blocks.push(TerminalBlock::new(format!("Team: {}", team.name)));
@@ -54,7 +55,9 @@ impl Actor for TerminalActor {
                 if team_id != &team.id {
                     continue;
                 }
-                enemies.push(actor.get_character().name.clone());
+                if Some(*team_id) != my_team {
+                    enemies.push(actor.get_character().name.clone());
+                }
                 blocks.push(TerminalBlock::new(format!(
                     "- {} ({}). Health: {}",
                     actor.get_character().name,
