@@ -13,7 +13,7 @@ use crate::*;
 
 pub struct Menu<T> {
     items: Vec<MenuItemRc<T>>,
-    prev: Vec<MenuItemRc<T>>,
+    prev: Vec<Vec<MenuItemRc<T>>>,
     selected: Option<usize>,
 }
 
@@ -59,7 +59,7 @@ impl<T> Menu<T> {
             if let Some(item) = self.items.get(selected) {
                 match item.action() {
                     MenuAction::MenuItem(items) => {
-                        self.prev = self.items.clone();
+                        self.prev.push(self.items.clone());
                         self.items = items;
                         self.selected = None;
                         None
@@ -67,7 +67,7 @@ impl<T> Menu<T> {
                     MenuAction::Done(output) => Some(output),
                 }
             } else if self.selected == Some(self.items.len()) {
-                self.items = self.prev.clone();
+                self.items = self.prev.pop().unwrap_or_default();
                 self.selected = None;
                 None
             } else {
@@ -87,7 +87,7 @@ impl<T> Menu<T> {
         for (index, item) in self.items.iter().enumerate() {
             if normalize_name(item.label()).starts_with(&normalized_name) {
                 self.selected = Some(index);
-            } else if "back".starts_with(&normalized_name) {
+            } else if self.has_back() && "back".starts_with(&normalized_name) {
                 self.selected = Some(self.items.len());
             }
         }
@@ -103,6 +103,11 @@ impl<T> Menu<T> {
                 "-"
             }
         };
+        let back_entry = if self.has_back() {
+            format!("\r\n{} Back", prefix(self.items.len()))
+        } else {
+            String::new()
+        };
         let menu_str = "Menu:\r\n".to_string()
             + &self
                 .items
@@ -111,7 +116,7 @@ impl<T> Menu<T> {
                 .map(|(index, item)| format!("{} {}", prefix(index), item.label()))
                 .collect::<Vec<String>>()
                 .join("\r\n")
-            + &format!("\r\n{} Back", prefix(self.items.len()))
+            + &back_entry
             + "\r\n> ";
         terminal_block.contents = menu_str;
     }
@@ -142,7 +147,6 @@ impl<T> Menu<T> {
                     None
                 }
                 Event::Key(Key::Ctrl('c' | 'd')) => {
-                    println!("Exiting");
                     return Err(ActionError::Exit(13));
                 }
                 Event::Key(Key::Up) => {
@@ -166,6 +170,10 @@ impl<T> Menu<T> {
             TerminalUi::draw(blocks)?;
         }
         Err(ActionError::fail("Exited input loop early"))
+    }
+
+    fn has_back(&self) -> bool {
+        !self.prev.is_empty()
     }
 }
 
