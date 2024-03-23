@@ -36,22 +36,34 @@ impl<T> Menu<T> {
     }
 
     pub fn move_focus(&mut self, direction: MenuDirection) {
+        let last_entry_index = if self.has_back() {
+            self.items.len()
+        } else {
+            self.items.len() - 1
+        };
         match direction {
             MenuDirection::Up => {
                 if let Some(cur) = self.selected {
                     self.selected = Some(max(cur, 1) - 1)
                 } else {
-                    self.selected = Some(self.items.len());
+                    self.selected = Some(last_entry_index);
                 }
             }
             MenuDirection::Down => {
                 if let Some(cur) = self.selected {
-                    self.selected = Some(min(cur + 1, self.items.len()))
+                    self.selected = Some(min(cur + 1, last_entry_index))
                 } else {
                     self.selected = Some(0);
                 }
             }
         }
+    }
+
+    pub fn go_back(&mut self) {
+        if !self.prev.is_empty() {
+            self.items = self.prev.pop().unwrap();
+        }
+        self.selected = None;
     }
 
     pub fn select_current_selection(&mut self) -> Option<T> {
@@ -67,8 +79,7 @@ impl<T> Menu<T> {
                     MenuAction::Done(output) => Some(output),
                 }
             } else if self.selected == Some(self.items.len()) {
-                self.items = self.prev.pop().unwrap_or_default();
-                self.selected = None;
+                self.go_back();
                 None
             } else {
                 None
@@ -148,6 +159,10 @@ impl<T> Menu<T> {
                 }
                 Event::Key(Key::Ctrl('c' | 'd')) => {
                     return Err(ActionError::Exit(13));
+                }
+                Event::Key(Key::Esc) => {
+                    self.go_back();
+                    None
                 }
                 Event::Key(Key::Up) => {
                     self.move_focus(MenuDirection::Up);
