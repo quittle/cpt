@@ -13,7 +13,7 @@ impl TerminalActor {
         blocks: &mut Vec<TerminalBlock>,
         mut menu: BattleMenu,
         battle: &Battle,
-    ) -> Result<CharacterId, ActionError> {
+    ) -> Result<Option<CharacterId>, ActionError> {
         blocks.push(TerminalBlock::default());
         blocks.push(TerminalBlock {
             prefix: TerminalSpan {
@@ -26,11 +26,11 @@ impl TerminalActor {
 
         let action = menu.wait_for_selection(blocks)?;
         match action {
-            BattleMenuOutput::Pass => Err(ActionError::fail("Passing")),
+            BattleMenuOutput::Pass => Ok(None),
             BattleMenuOutput::Attack(name) => {
                 for (_team_id, actor) in &battle.actors {
                     if actor.get_character().name == name {
-                        return Ok(actor.get_character().id);
+                        return Ok(Some(actor.get_character().id));
                     }
                 }
                 Err(ActionError::fail(format!(
@@ -45,6 +45,14 @@ impl TerminalActor {
 impl Actor for TerminalActor {
     async fn act(&self, battle: &Battle) -> ActionResult {
         let mut blocks = vec![];
+
+        for entry in &battle.history {
+            blocks.push(TerminalBlock::new(entry));
+        }
+
+        if !battle.history.is_empty() {
+            blocks.push(TerminalBlock::default());
+        }
 
         let my_team = battle.get_team_for_actor(self);
         let mut enemies = vec![];
@@ -74,11 +82,18 @@ impl Actor for TerminalActor {
             Rc::new(PassMenuItem {}),
         ]);
 
-        let target: CharacterId = self.get_valid_target(&mut blocks, menu, battle)?;
-        Ok(ActionRequest {
-            description: target.to_string(),
-            action: Action::AttackCharacter(target, self.character.base_attack),
-        })
+        let target: Option<CharacterId> = self.get_valid_target(&mut blocks, menu, battle)?;
+        if let Some(target_id) = target {
+            Ok(ActionRequest {
+                description: target_id.to_string(),
+                action: Action::AttackCharacter(target_id, self.character.base_attack),
+            })
+        } else {
+            Ok(ActionRequest {
+                description: "pass".to_string(),
+                action: Action::Pass,
+            })
+        }
     }
 
     fn get_character(&self) -> &Character {

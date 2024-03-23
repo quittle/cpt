@@ -14,6 +14,7 @@ struct Turn {
 pub struct Battle {
     pub actors: Vec<(TeamId, Box<dyn Actor>)>,
     pub teams: Vec<Team>,
+    pub history: Vec<String>,
     // TODO, reordering of teams
 }
 
@@ -96,10 +97,20 @@ impl Battle {
             let action_result = actor.act(self).await;
             match action_result {
                 Ok(request) => match request.action {
-                    Action::Pass => {}
+                    Action::Pass => {
+                        self.history
+                            .push(format!("{} took no action", actor.get_character().name));
+                    }
                     Action::AttackCharacter(target, damage) => {
-                        self.require_mut_actor(target)
-                            .damage(turn.character, damage);
+                        self.history.push(format!(
+                            "{} attacked {} for {} damage",
+                            actor.get_character().name,
+                            self.require_actor(target).get_character().name,
+                            damage
+                        ));
+
+                        let target_actor = self.require_mut_actor(target);
+                        target_actor.damage(turn.character, damage);
                     }
                 },
                 Err(ActionError::Failure(failure)) => {

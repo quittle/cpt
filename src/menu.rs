@@ -132,10 +132,7 @@ impl<T> Menu<T> {
         terminal_block.contents = menu_str;
     }
 
-    pub fn wait_for_selection(
-        &mut self,
-        blocks: &mut Vec<TerminalBlock>,
-    ) -> Result<T, ActionError> {
+    pub fn wait_for_selection(&mut self, blocks: &mut [TerminalBlock]) -> Result<T, ActionError> {
         let (_raw_out, _raw_err) = (
             std::io::stdout().into_raw_mode()?,
             std::io::stderr().into_raw_mode()?,

@@ -32,6 +32,7 @@ fn main() {
                 id: TeamId::new(1),
             },
         ],
+        history: vec![],
     };
     block_on(battle.run_to_completion());
     println!("Game over");
