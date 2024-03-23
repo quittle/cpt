@@ -21,6 +21,14 @@ pub enum ActionError {
     Exit(i32),
 }
 
+impl ActionError {
+    pub fn fail(message: impl Into<String>) -> ActionError {
+        Self::Failure(ActionFailure {
+            message: Into::into(message),
+        })
+    }
+}
+
 impl From<std::io::Error> for ActionError {
     fn from(value: std::io::Error) -> Self {
         Self::Failure(ActionFailure {
