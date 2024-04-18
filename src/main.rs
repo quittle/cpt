@@ -33,6 +33,7 @@ fn main() {
             },
         ],
         history: vec![],
+        random_provider: Box::new(DefaultRandomProvider::default()),
     };
     block_on(battle.run_to_completion());
     println!("Game over");

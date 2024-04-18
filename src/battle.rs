@@ -15,8 +15,10 @@ pub struct Battle {
     pub actors: Vec<(TeamId, Box<dyn Actor>)>,
     pub teams: Vec<Team>,
     pub history: Vec<String>,
-    // TODO, reordering of teams
+    pub random_provider: Box<dyn RandomProvider>,
 }
+
+unsafe impl Sync for Battle {}
 
 impl Battle {
     pub fn get_team_for_actor(&self, actor: &dyn Actor) -> Option<TeamId> {

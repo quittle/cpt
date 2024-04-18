@@ -8,6 +8,14 @@ pub struct DumbActor {
 #[async_trait]
 impl Actor for DumbActor {
     async fn act(&self, battle: &Battle) -> ActionResult {
+        let should_attack = random_choice!(battle.random_provider, true, false);
+        if !should_attack {
+            return Ok(ActionRequest {
+                description: "Doing Nothing".into(),
+                action: Action::Pass,
+            });
+        }
+
         let my_team = battle
             .get_team_for_actor(self)
             .unwrap_or_else(|| panic!("Failed to find team for self {}", self.character.id));
