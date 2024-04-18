@@ -68,9 +68,9 @@ mod tests {
         let random = DefaultRandomProvider::default();
         for _ in 0..1000 {
             let choice_u64 = random.pick_linear_u64(10, 20);
-            assert!(choice_u64 >= 10 && choice_u64 <= 20);
+            assert!((10..=20).contains(&choice_u64));
             let choice_usize = random.pick_linear_usize(10, 20);
-            assert!(choice_usize >= 10 && choice_usize <= 20);
+            assert!((10..=20).contains(&choice_usize));
         }
     }
 
@@ -82,7 +82,7 @@ mod tests {
             let mut call_count = 0;
             let mut expensive = |value: i32| -> i32 {
                 call_count += 1;
-                return value;
+                value
             };
 
             let option = random_choice!(random, expensive(1), expensive(2), expensive(3));
