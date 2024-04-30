@@ -3,6 +3,19 @@ use term_size;
 
 use crate::*;
 
+fn get_len_of_block(block: &TerminalBlock) -> usize {
+    if let Some(index) = block.suffix.contents.rfind("\n") {
+        block.suffix.contents.len() - index - 1
+    } else if let Some(index) = block.contents.rfind("\n") {
+        block.suffix.contents.len() + (block.contents.len() - index) - 1
+    } else if let Some(index) = block.prefix.contents.rfind("\n") {
+        block.suffix.contents.len() + block.contents.len() + (block.prefix.contents.len() - index)
+            - 1
+    } else {
+        block.suffix.contents.len() + block.contents.len() + block.prefix.contents.len()
+    }
+}
+
 pub struct TerminalUi {}
 
 impl TerminalUi {
@@ -12,13 +25,11 @@ impl TerminalUi {
         let mut raw_stdout = std::io::stdout();
         write!(raw_stdout, "{}\r", termion::clear::All)?;
         for (i, block) in blocks.iter().enumerate() {
-            let content_width =
-                block.prefix.contents.len() + block.contents.len() + block.suffix.contents.len();
             block.prefix.write(&mut raw_stdout)?;
             raw_stdout.write_all(block.contents.as_bytes())?;
             block.suffix.write(&mut raw_stdout)?;
             if i < blocks.len() - 1 {
-                raw_stdout.write_all(" ".repeat(width - content_width).as_bytes())?;
+                raw_stdout.write_all(" ".repeat(width - get_len_of_block(block)).as_bytes())?;
             }
         }
         raw_stdout.flush()?;

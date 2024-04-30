@@ -106,7 +106,7 @@ impl<T> Menu<T> {
         self.select_current_selection()
     }
 
-    pub fn show(&self, terminal_block: &mut TerminalBlock) {
+    pub fn show(&self, block: &mut TerminalBlock) {
         let prefix = |index| {
             if Some(index) == self.selected {
                 ">"
@@ -127,9 +127,9 @@ impl<T> Menu<T> {
                 .map(|(index, item)| format!("{} {}", prefix(index), item.label()))
                 .collect::<Vec<String>>()
                 .join("\r\n")
-            + &back_entry
-            + "\r\n> ";
-        terminal_block.contents = menu_str;
+            + &back_entry;
+        // + "\r\n> ";
+        block.contents = menu_str;
     }
 
     pub fn wait_for_selection(&mut self, blocks: &mut [TerminalBlock]) -> Result<T, ActionError> {
@@ -138,7 +138,8 @@ impl<T> Menu<T> {
             std::io::stderr().into_raw_mode()?,
         );
 
-        self.show(blocks.last_mut().unwrap());
+        self.show(&mut blocks[blocks.len() - 2]);
+        blocks.last_mut().unwrap().contents = "> ".to_string();
         TerminalUi::draw(blocks)?;
 
         for c in std::io::stdin().events() {
@@ -178,7 +179,7 @@ impl<T> Menu<T> {
             if let Some(output) = result {
                 return Ok(output);
             }
-            self.show(terminal_block);
+            self.show(&mut blocks[blocks.len() - 2]);
             TerminalUi::draw(blocks)?;
         }
         Err(ActionError::fail("Exited input loop early"))
