@@ -20,7 +20,7 @@ impl Actor for DumbActor {
             .get_team_for_actor(self)
             .unwrap_or_else(|| panic!("Failed to find team for self {}", self.character.id));
         for (team_id, actor) in &battle.actors {
-            if &my_team != team_id {
+            if &my_team != team_id && !actor.get_character().is_dead() {
                 return Ok(ActionRequest {
                     description: "Attack".into(),
                     action: Action::AttackCharacter(

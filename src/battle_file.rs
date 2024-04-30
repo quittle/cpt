@@ -22,6 +22,7 @@ pub struct Team {
 #[derive(Serialize, Deserialize)]
 pub struct TeamMember {
     pub name: String,
+    pub base_health: i64,
     pub attacks: Vec<Attack>,
 }
 
@@ -46,6 +47,7 @@ mod tests {
                     "members": [
                         {
                             "name": "Member 1",
+                            "base_health": 10,
                             "attacks": [
                                 {
                                     "name": "Kick",

@@ -71,7 +71,7 @@ impl Battle {
                                         name: team_member.name.clone(),
                                         race: CharacterRace::Human,
                                         base_attack: Attack::new(1),
-                                        health: Health::new(1),
+                                        health: Health::new(team_member.base_health),
                                     },
                                 }) as Box<dyn Actor>,
                             )
@@ -197,6 +197,8 @@ impl Battle {
 
 #[cfg(test)]
 mod tests {
+    use futures::executor::block_on;
+
     use crate::{Battle, DefaultRandomProvider};
 
     #[test]
@@ -210,6 +212,7 @@ mod tests {
                     "members": [
                         {
                             "name": "Member A1",
+                            "base_health": 5,
                             "attacks": [
                                 {
                                     "name": "Kick",
@@ -219,6 +222,7 @@ mod tests {
                         },
                         {
                             "name": "Member A2",
+                            "base_health": 5,
                             "attacks": [
                                 {
                                     "name": "Punch",
@@ -233,6 +237,7 @@ mod tests {
                     "members": [
                         {
                             "name": "Member B1",
+                            "base_health": 15,
                             "attacks": [
                                 {
                                     "name": "Bite",
@@ -244,7 +249,7 @@ mod tests {
                 }
             ]
         }"#;
-        let battle = Battle::deserialize(battle_json, Box::<DefaultRandomProvider>::default())?;
+        let mut battle = Battle::deserialize(battle_json, Box::<DefaultRandomProvider>::default())?;
         assert_eq!(battle.history.len(), 0);
         assert_eq!(battle.teams.len(), 2);
         assert_eq!(battle.teams[0].name, "Team A".to_string());
@@ -258,6 +263,8 @@ mod tests {
         assert_eq!(battle.actors[1].1.get_character().name, "Member A2");
         assert_eq!(battle.actors[2].0.id, 1);
         assert_eq!(battle.actors[2].1.get_character().name, "Member B1");
+
+        block_on(battle.run_to_completion());
         Ok(())
     }
 }
