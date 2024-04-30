@@ -2,11 +2,13 @@ use crate::*;
 
 DeclareWrappedType!(TeamId, id, u64);
 
+#[derive(Debug)]
 pub struct Team {
     pub id: TeamId,
     pub name: String,
 }
 
+#[derive(Debug)]
 struct Turn {
     character: CharacterId,
 }
@@ -21,6 +23,64 @@ pub struct Battle {
 unsafe impl Sync for Battle {}
 
 impl Battle {
+    pub fn deserialize(
+        data: &str,
+        random_provider: Box<dyn RandomProvider>,
+    ) -> Result<Self, String> {
+        let battle = battle_file::Battle::parse_from_str(data)?;
+        let max_team_size = battle
+            .teams
+            .iter()
+            .map(|team| team.members.len())
+            .max()
+            .unwrap_or(0);
+        Ok(Battle {
+            history: vec![],
+            random_provider,
+            teams: battle
+                .teams
+                .iter()
+                .enumerate()
+                .map(|(index, team)| Team {
+                    id: TeamId::new(index.try_into().unwrap()),
+                    name: team.name.clone(),
+                })
+                .collect(),
+            actors: battle
+                .teams
+                .iter()
+                .enumerate()
+                .flat_map(|(team_index, team)| {
+                    team.members
+                        .iter()
+                        .enumerate()
+                        .map(move |(member_index, team_member)| {
+                            println!(
+                                "team index: {} max_team_size {} member_index {}",
+                                team_index, max_team_size, member_index
+                            );
+                            (
+                                TeamId::new(team_index.try_into().unwrap()),
+                                Box::new(DumbActor {
+                                    character: Character {
+                                        id: CharacterId::new(
+                                            (team_index * max_team_size + member_index)
+                                                .try_into()
+                                                .unwrap(),
+                                        ),
+                                        name: team_member.name.clone(),
+                                        race: CharacterRace::Human,
+                                        base_attack: Attack::new(1),
+                                        health: Health::new(1),
+                                    },
+                                }) as Box<dyn Actor>,
+                            )
+                        })
+                })
+                .collect(),
+        })
+    }
+
     pub fn get_team_for_actor(&self, actor: &dyn Actor) -> Option<TeamId> {
         for (team_id, other_actor) in &self.actors {
             if actor.get_character().id == other_actor.get_character().id {
@@ -132,5 +192,72 @@ impl Battle {
         while self.has_more_than_one_team_alive() {
             self.advance().await;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Battle, DefaultRandomProvider};
+
+    #[test]
+    fn test_deserialize() -> Result<(), String> {
+        let battle_json = r#"{
+            "title": "Example Game",
+            "description": "Example Description",
+            "teams": [
+                {
+                    "name": "Team A",
+                    "members": [
+                        {
+                            "name": "Member A1",
+                            "attacks": [
+                                {
+                                    "name": "Kick",
+                                    "base_damage": 123
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Member A2",
+                            "attacks": [
+                                {
+                                    "name": "Punch",
+                                    "base_damage": 456
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Team B",
+                    "members": [
+                        {
+                            "name": "Member B1",
+                            "attacks": [
+                                {
+                                    "name": "Bite",
+                                    "base_damage": 1
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }"#;
+        let battle = Battle::deserialize(battle_json, Box::<DefaultRandomProvider>::default())?;
+        assert_eq!(battle.history.len(), 0);
+        assert_eq!(battle.teams.len(), 2);
+        assert_eq!(battle.teams[0].name, "Team A".to_string());
+        assert_eq!(battle.teams[0].id.id, 0);
+        assert_eq!(battle.teams[1].name, "Team B".to_string());
+        assert_eq!(battle.teams[1].id.id, 1);
+        assert_eq!(battle.actors.len(), 3);
+        assert_eq!(battle.actors[0].0.id, 0);
+        assert_eq!(battle.actors[0].1.get_character().name, "Member A1");
+        assert_eq!(battle.actors[1].0.id, 0);
+        assert_eq!(battle.actors[1].1.get_character().name, "Member A2");
+        assert_eq!(battle.actors[2].0.id, 1);
+        assert_eq!(battle.actors[2].1.get_character().name, "Member B1");
+        Ok(())
     }
 }

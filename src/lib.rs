@@ -1,6 +1,7 @@
 pub mod action;
 pub mod actor;
 pub mod battle;
+pub mod battle_file;
 pub mod battle_menu;
 pub mod character;
 pub mod dumb_actor;

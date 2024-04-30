@@ -128,7 +128,6 @@ impl<T> Menu<T> {
                 .collect::<Vec<String>>()
                 .join("\r\n")
             + &back_entry;
-        // + "\r\n> ";
         block.contents = menu_str;
     }
 

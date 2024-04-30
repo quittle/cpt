@@ -4,11 +4,11 @@ use term_size;
 use crate::*;
 
 fn get_len_of_block(block: &TerminalBlock) -> usize {
-    if let Some(index) = block.suffix.contents.rfind("\n") {
+    if let Some(index) = block.suffix.contents.rfind('\n') {
         block.suffix.contents.len() - index - 1
-    } else if let Some(index) = block.contents.rfind("\n") {
+    } else if let Some(index) = block.contents.rfind('\n') {
         block.suffix.contents.len() + (block.contents.len() - index) - 1
-    } else if let Some(index) = block.prefix.contents.rfind("\n") {
+    } else if let Some(index) = block.prefix.contents.rfind('\n') {
         block.suffix.contents.len() + block.contents.len() + (block.prefix.contents.len() - index)
             - 1
     } else {
