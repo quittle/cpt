@@ -62,7 +62,7 @@ impl Battle {
                                         .unwrap(),
                                 ),
                                 name: team_member.name.clone(),
-                                race: CharacterRace::Human,
+                                race: CharacterRace::from_battle_file(&team_member.race),
                                 base_attack: Attack::new(1),
                                 health: Health::new(team_member.base_health),
                             };
@@ -212,6 +212,7 @@ mod tests {
                     "members": [
                         {
                             "name": "Member A1",
+                            "race": "Human",
                             "base_health": 5,
                             "attacks": [
                                 {
@@ -222,6 +223,7 @@ mod tests {
                         },
                         {
                             "name": "Member A2",
+                            "race": "Human",
                             "base_health": 5,
                             "attacks": [
                                 {
@@ -237,6 +239,7 @@ mod tests {
                     "members": [
                         {
                             "name": "Member B1",
+                            "race": "Human",
                             "base_health": 15,
                             "attacks": [
                                 {

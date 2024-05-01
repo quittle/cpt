@@ -36,10 +36,16 @@ pub struct Team {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TeamMember {
     pub name: String,
+    pub race: Race,
     pub base_health: i64,
     pub attacks: Vec<Attack>,
     #[serde(default)]
     pub is_player: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Race {
+    Human,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -63,6 +69,7 @@ mod tests {
                     "members": [
                         {
                             "name": "Member 1",
+                            "race": "Human",
                             "base_health": 10,
                             "attacks": [
                                 {
@@ -94,12 +101,14 @@ mod tests {
                         {
                             "name": "Member 1",
                             "is_player": true,
+                            "race": "Human",
                             "base_health": 10,
                             "attacks": []
                         },
                         {
                             "name": "Member 2",
                             "is_player": true,
+                            "race": "Human",
                             "base_health": 10,
                             "attacks": []
                         }

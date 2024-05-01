@@ -8,6 +8,14 @@ pub enum CharacterRace {
     Human,
 }
 
+impl CharacterRace {
+    pub fn from_battle_file(race: &battle_file::Race) -> Self {
+        match race {
+            battle_file::Race::Human => Self::Human,
+        }
+    }
+}
+
 DeclareWrappedType!(Attack, damage, i64);
 
 DeclareWrappedType!(Health, health, i64);
