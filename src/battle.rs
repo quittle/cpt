@@ -55,25 +55,25 @@ impl Battle {
                         .iter()
                         .enumerate()
                         .map(move |(member_index, team_member)| {
-                            println!(
-                                "team index: {} max_team_size {} member_index {}",
-                                team_index, max_team_size, member_index
-                            );
+                            let character = Character {
+                                id: CharacterId::new(
+                                    (team_index * max_team_size + member_index)
+                                        .try_into()
+                                        .unwrap(),
+                                ),
+                                name: team_member.name.clone(),
+                                race: CharacterRace::Human,
+                                base_attack: Attack::new(1),
+                                health: Health::new(team_member.base_health),
+                            };
+
                             (
                                 TeamId::new(team_index.try_into().unwrap()),
-                                Box::new(DumbActor {
-                                    character: Character {
-                                        id: CharacterId::new(
-                                            (team_index * max_team_size + member_index)
-                                                .try_into()
-                                                .unwrap(),
-                                        ),
-                                        name: team_member.name.clone(),
-                                        race: CharacterRace::Human,
-                                        base_attack: Attack::new(1),
-                                        health: Health::new(team_member.base_health),
-                                    },
-                                }) as Box<dyn Actor>,
+                                if team_member.is_player {
+                                    Box::new(TerminalActor { character }) as Box<dyn Actor>
+                                } else {
+                                    Box::new(DumbActor { character }) as Box<dyn Actor>
+                                },
                             )
                         })
                 })

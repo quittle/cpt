@@ -1,0 +1,47 @@
+{
+    "title": "Example Game",
+    "description": "Example Description",
+    "teams": [
+        {
+            "name": "Team A",
+            "members": [
+                {
+                    "name": "Member A1",
+                    "base_health": 5,
+                    "attacks": [
+                        {
+                            "name": "Kick",
+                            "base_damage": 123
+                        }
+                    ]
+                },
+                {
+                    "name": "Member A2",
+                    "base_health": 5,
+                    "attacks": [
+                        {
+                            "name": "Punch",
+                            "base_damage": 456
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Team B",
+            "members": [
+                {
+                    "name": "Member B1",
+                    "is_player": true,
+                    "base_health": 15,
+                    "attacks": [
+                        {
+                            "name": "Bite",
+                            "base_damage": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
