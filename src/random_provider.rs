@@ -7,6 +7,16 @@ pub trait RandomProvider {
     fn pick_linear_usize(&self, lower_bound: usize, upper_bound: usize) -> usize;
 }
 
+pub trait RandomPicker<T> {
+    fn pick_linear(&self, random_provider: &dyn RandomProvider) -> Option<&T>;
+}
+
+impl<T> RandomPicker<T> for Vec<T> {
+    fn pick_linear(&self, random_provider: &dyn RandomProvider) -> Option<&T> {
+        self.get(random_provider.pick_linear_usize(0, self.len() - 1))
+    }
+}
+
 #[macro_export]
 macro_rules! count {
     () => { 0usize };

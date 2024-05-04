@@ -62,8 +62,17 @@ impl Battle {
                                         .unwrap(),
                                 ),
                                 name: team_member.name.clone(),
-                                race: CharacterRace::from_battle_file(&team_member.race),
-                                base_attack: Attack::new(1),
+                                race: match team_member.race {
+                                    battle_file::Race::Human => CharacterRace::Human,
+                                },
+                                actions: team_member
+                                    .attacks
+                                    .iter()
+                                    .map(|attack| CharacterAction::Attack {
+                                        name: attack.name.clone(),
+                                        base_damage: attack.base_damage,
+                                    })
+                                    .collect(),
                                 health: Health::new(team_member.base_health),
                             };
 
@@ -163,16 +172,17 @@ impl Battle {
                         self.history
                             .push(format!("{} took no action", actor.get_character().name));
                     }
-                    Action::AttackCharacter(target, damage) => {
+                    Action::AttackCharacter(target, attack_name, attack) => {
                         self.history.push(format!(
-                            "{} attacked {} for {} damage",
+                            "{} used {} on {} for {} damage",
                             actor.get_character().name,
+                            attack_name,
                             self.require_actor(target).get_character().name,
-                            damage
+                            attack
                         ));
 
                         let target_actor = self.require_mut_actor(target);
-                        target_actor.damage(turn.character, damage);
+                        target_actor.damage(turn.character, attack);
                     }
                 },
                 Err(ActionError::Failure(failure)) => {

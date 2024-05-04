@@ -8,14 +8,6 @@ pub enum CharacterRace {
     Human,
 }
 
-impl CharacterRace {
-    pub fn from_battle_file(race: &battle_file::Race) -> Self {
-        match race {
-            battle_file::Race::Human => Self::Human,
-        }
-    }
-}
-
 DeclareWrappedType!(Attack, damage, i64);
 
 DeclareWrappedType!(Health, health, i64);
@@ -38,13 +30,17 @@ pub struct Character {
     pub id: CharacterId,
     pub name: String,
     pub race: CharacterRace,
-    pub base_attack: Attack,
-
+    pub actions: Vec<CharacterAction>,
     pub health: Health,
 }
 
 impl Character {
     pub fn is_dead(&self) -> bool {
-        self.health.health == 0
+        self.health.health <= 0
     }
+}
+
+#[derive(Clone)]
+pub enum CharacterAction {
+    Attack { name: String, base_damage: i64 },
 }

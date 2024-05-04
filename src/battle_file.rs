@@ -51,7 +51,7 @@ pub enum Race {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Attack {
     pub name: String,
-    pub base_damage: u16,
+    pub base_damage: i64,
 }
 
 #[cfg(test)]

@@ -5,6 +5,18 @@ pub struct DumbActor {
     pub character: Character,
 }
 
+fn pick_random_attack(character: &Character, battle: &Battle) -> (String, Attack) {
+    let action = character
+        .actions
+        .pick_linear(battle.random_provider.as_ref())
+        .unwrap();
+    match action {
+        CharacterAction::Attack { name, base_damage } => {
+            (name.to_string(), Attack::new(*base_damage))
+        }
+    }
+}
+
 #[async_trait]
 impl Actor for DumbActor {
     async fn act(&self, battle: &Battle) -> ActionResult {
@@ -21,12 +33,10 @@ impl Actor for DumbActor {
             .unwrap_or_else(|| panic!("Failed to find team for self {}", self.character.id));
         for (team_id, actor) in &battle.actors {
             if &my_team != team_id && !actor.get_character().is_dead() {
+                let (attack_name, attack) = pick_random_attack(&self.character, battle);
                 return Ok(ActionRequest {
                     description: "Attack".into(),
-                    action: Action::AttackCharacter(
-                        actor.get_character().id,
-                        self.character.base_attack,
-                    ),
+                    action: Action::AttackCharacter(actor.get_character().id, attack_name, attack),
                 });
             }
         }

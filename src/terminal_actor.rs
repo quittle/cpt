@@ -13,7 +13,7 @@ impl TerminalActor {
         blocks: &mut Vec<TerminalBlock>,
         mut menu: BattleMenu,
         battle: &Battle,
-    ) -> Result<Option<CharacterId>, ActionError> {
+    ) -> Result<Option<(CharacterId, String, Attack)>, ActionError> {
         blocks.push(TerminalBlock::default());
         blocks.push(TerminalBlock {
             prefix: TerminalSpan {
@@ -27,14 +27,18 @@ impl TerminalActor {
         let action = menu.wait_for_selection(blocks)?;
         match action {
             BattleMenuOutput::Pass => Ok(None),
-            BattleMenuOutput::Attack(name) => {
+            BattleMenuOutput::Attack {
+                target,
+                attack_name,
+                base_attack,
+            } => {
                 for (_team_id, actor) in &battle.actors {
-                    if actor.get_character().name == name {
-                        return Ok(Some(actor.get_character().id));
+                    if actor.get_character().name == target {
+                        return Ok(Some((actor.get_character().id, attack_name, base_attack)));
                     }
                 }
                 Err(ActionError::fail(format!(
-                    "Failed to find character id for {name}"
+                    "Failed to find character id for {target}"
                 )))
             }
         }
@@ -78,15 +82,19 @@ impl Actor for TerminalActor {
         blocks.push(TerminalBlock::default());
 
         let menu = BattleMenu::new(vec![
-            Rc::new(AttackMenu { targets: enemies }),
+            Rc::new(ActionsMenu {
+                actions: self.character.actions.clone(),
+                targets: enemies,
+            }),
             Rc::new(PassMenuItem {}),
         ]);
 
-        let target: Option<CharacterId> = self.get_valid_target(&mut blocks, menu, battle)?;
-        if let Some(target_id) = target {
+        if let Some((target_id, attack_name, attack)) =
+            self.get_valid_target(&mut blocks, menu, battle)?
+        {
             Ok(ActionRequest {
                 description: target_id.to_string(),
-                action: Action::AttackCharacter(target_id, self.character.base_attack),
+                action: Action::AttackCharacter(target_id, attack_name, attack),
             })
         } else {
             Ok(ActionRequest {

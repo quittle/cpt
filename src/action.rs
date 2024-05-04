@@ -4,7 +4,7 @@ use crate::*;
 
 pub enum Action {
     Pass,
-    AttackCharacter(CharacterId, Attack),
+    AttackCharacter(CharacterId, String, Attack),
 }
 
 pub struct ActionRequest {
