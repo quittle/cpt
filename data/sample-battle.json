@@ -1,6 +1,23 @@
 {
     "title": "Example Game",
     "description": "Example Description",
+    "attacks": [
+        {
+            "id": 0,
+            "name": "Kick",
+            "base_damage": 1
+        },
+        {
+            "id": 1,
+            "name": "Punch",
+            "base_damage": 2
+        },
+        {
+            "id": 2,
+            "name": "Bite",
+            "base_damage": 3
+        }
+    ],
     "teams": [
         {
             "name": "Team A",
@@ -9,23 +26,13 @@
                     "name": "Member A1",
                     "race": "Human",
                     "base_health": 5,
-                    "attacks": [
-                        {
-                            "name": "Kick",
-                            "base_damage": 1
-                        }
-                    ]
+                    "attacks": [0]
                 },
                 {
                     "name": "Member A2",
                     "race": "Human",
                     "base_health": 5,
-                    "attacks": [
-                        {
-                            "name": "Punch",
-                            "base_damage": 2
-                        }
-                    ]
+                    "attacks": [1]
                 }
             ]
         },
@@ -37,12 +44,7 @@
                     "is_player": true,
                     "race": "Human",
                     "base_health": 15,
-                    "attacks": [
-                        {
-                            "name": "Bite",
-                            "base_damage": 3
-                        }
-                    ]
+                    "attacks": [2]
                 }
             ]
         }
