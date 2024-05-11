@@ -45,13 +45,40 @@ impl TerminalActor {
     }
 }
 
+fn battle_history_to_terminal_string(battle_history: &BattleHistory) -> String {
+    match battle_history {
+        BattleHistory::Text(text) => text.clone(),
+        BattleHistory::Id(text) => {
+            format!("{}{}{}", termion::style::Bold, text, termion::style::Reset)
+        }
+        BattleHistory::Attack(text) => format!(
+            "{}{}{}",
+            termion::color::Fg(termion::color::Yellow),
+            text,
+            termion::color::Fg(termion::color::Reset),
+        ),
+        BattleHistory::Damage(text) => format!(
+            "{}{}{}",
+            termion::color::Fg(termion::color::Red),
+            text,
+            termion::color::Fg(termion::color::Reset),
+        ),
+    }
+}
+
 #[async_trait]
 impl Actor for TerminalActor {
     async fn act(&self, battle: &Battle) -> ActionResult {
         let mut blocks = vec![];
 
         for entry in &battle.history {
-            blocks.push(TerminalBlock::new(entry));
+            blocks.push(TerminalBlock::new(
+                entry
+                    .iter()
+                    .map(battle_history_to_terminal_string)
+                    .collect::<Vec<String>>()
+                    .join(" "),
+            ));
         }
 
         if !battle.history.is_empty() {

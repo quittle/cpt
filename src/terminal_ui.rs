@@ -1,18 +1,25 @@
+use regex::Regex;
 use std::io::Write;
 use term_size;
 
 use crate::*;
 
 fn get_len_of_block(block: &TerminalBlock) -> usize {
-    if let Some(index) = block.suffix.contents.rfind('\n') {
-        block.suffix.contents.len() - index - 1
-    } else if let Some(index) = block.contents.rfind('\n') {
-        block.suffix.contents.len() + (block.contents.len() - index) - 1
-    } else if let Some(index) = block.prefix.contents.rfind('\n') {
-        block.suffix.contents.len() + block.contents.len() + (block.prefix.contents.len() - index)
-            - 1
+    // https://superuser.com/a/380778
+    let ansi_color: Regex = Regex::new(r"\x1b\[[0-9;]*m").unwrap();
+
+    let prefix = ansi_color.replace_all(&block.prefix.contents, "");
+    let contents = ansi_color.replace_all(&block.contents, "");
+    let suffix = ansi_color.replace_all(&block.suffix.contents, "");
+
+    if let Some(index) = suffix.rfind('\n') {
+        suffix.len() - index - 1
+    } else if let Some(index) = contents.rfind('\n') {
+        suffix.len() + (contents.len() - index) - 1
+    } else if let Some(index) = prefix.rfind('\n') {
+        suffix.len() + contents.len() + (prefix.len() - index) - 1
     } else {
-        block.suffix.contents.len() + block.contents.len() + block.prefix.contents.len()
+        suffix.len() + contents.len() + prefix.len()
     }
 }
 

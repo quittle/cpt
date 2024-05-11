@@ -13,10 +13,17 @@ struct Turn {
     character: CharacterId,
 }
 
+pub enum BattleHistory {
+    Text(String),
+    Id(String),
+    Attack(String),
+    Damage(String),
+}
+
 pub struct Battle {
     pub actors: Vec<(TeamId, Box<dyn Actor>)>,
     pub teams: Vec<Team>,
-    pub history: Vec<String>,
+    pub history: Vec<Vec<BattleHistory>>,
     pub random_provider: Box<dyn RandomProvider>,
 }
 
@@ -178,17 +185,24 @@ impl Battle {
             match action_result {
                 Ok(request) => match request.action {
                     Action::Pass => {
-                        self.history
-                            .push(format!("{} took no action", actor.get_character().name));
+                        self.history.push(vec![
+                            BattleHistory::Id(actor.get_character().name.clone()),
+                            BattleHistory::Text("took no action".into()),
+                        ]);
                     }
                     Action::AttackCharacter(target, attack_name, attack) => {
-                        self.history.push(format!(
-                            "{} used {} on {} for {} damage",
-                            actor.get_character().name,
-                            attack_name,
-                            self.require_actor(target).get_character().name,
-                            attack
-                        ));
+                        self.history.push(vec![
+                            BattleHistory::Id(actor.get_character().name.clone()),
+                            BattleHistory::Text("used".into()),
+                            BattleHistory::Attack(attack_name),
+                            BattleHistory::Text("on".into()),
+                            BattleHistory::Id(
+                                self.require_actor(target).get_character().name.clone(),
+                            ),
+                            BattleHistory::Text("for".into()),
+                            BattleHistory::Damage(attack.to_string()),
+                            BattleHistory::Text("damage".into()),
+                        ]);
 
                         let target_actor = self.require_mut_actor(target);
                         target_actor.damage(turn.character, attack);
