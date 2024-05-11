@@ -27,7 +27,6 @@ impl MenuItem<BattleMenuOutput> for AttackSelectionItem {
     }
 
     fn action(&self) -> BattleMenuAction {
-        println!("Attacking {}", self.target);
         MenuAction::Done(BattleMenuOutput::Attack {
             target: self.target.clone(),
             attack_name: self.attack_name.clone(),

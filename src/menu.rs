@@ -144,6 +144,7 @@ impl<T> Menu<T> {
         for c in std::io::stdin().events() {
             let evt = c.unwrap();
             let terminal_block = blocks.last_mut().unwrap();
+            terminal_block.prefix.contents.clear();
             let result = match evt {
                 Event::Key(Key::Char('\n')) => self.select_current_selection(),
                 Event::Key(Key::Char(c)) => {

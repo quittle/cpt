@@ -94,15 +94,18 @@ impl Actor for TerminalActor {
                 if team_id != &team.id {
                     continue;
                 }
-                if Some(*team_id) != my_team {
-                    enemies.push(actor.get_character().name.clone());
+                let character = &actor.get_character();
+                if Some(*team_id) != my_team && !character.is_dead() {
+                    enemies.push(character.name.clone());
                 }
-                blocks.push(TerminalBlock::new(format!(
-                    "- {} ({}). Health: {}",
-                    actor.get_character().name,
-                    actor.get_character().id,
-                    actor.get_character().health,
-                )));
+                blocks.push(TerminalBlock::new(if character.is_dead() {
+                    format!("- {} ({}). Dead 💀", character.name, character.id)
+                } else {
+                    format!(
+                        "- {} ({}). Health: {}",
+                        character.name, character.id, character.health,
+                    )
+                }));
             }
         }
 

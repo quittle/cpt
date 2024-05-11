@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::io::Write;
 use term_size;
+use unicode_width::UnicodeWidthStr;
 
 use crate::*;
 
@@ -9,17 +10,20 @@ fn get_len_of_block(block: &TerminalBlock) -> usize {
     let ansi_color: Regex = Regex::new(r"\x1b\[[0-9;]*m").unwrap();
 
     let prefix = ansi_color.replace_all(&block.prefix.contents, "");
+    let prefix_len = prefix.width();
     let contents = ansi_color.replace_all(&block.contents, "");
+    let contents_len = contents.width();
     let suffix = ansi_color.replace_all(&block.suffix.contents, "");
+    let suffix_len = suffix.width();
 
     if let Some(index) = suffix.rfind('\n') {
-        suffix.len() - index - 1
+        suffix_len - index - 1
     } else if let Some(index) = contents.rfind('\n') {
-        suffix.len() + (contents.len() - index) - 1
+        suffix_len + (contents_len - index) - 1
     } else if let Some(index) = prefix.rfind('\n') {
-        suffix.len() + contents.len() + (prefix.len() - index) - 1
+        suffix_len + contents_len + (prefix_len - index) - 1
     } else {
-        suffix.len() + contents.len() + prefix.len()
+        suffix_len + contents_len + prefix_len
     }
 }
 

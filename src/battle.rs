@@ -25,6 +25,7 @@ pub struct Battle {
     pub teams: Vec<Team>,
     pub history: Vec<Vec<BattleHistory>>,
     pub random_provider: Box<dyn RandomProvider>,
+    pub round: u16,
 }
 
 unsafe impl Sync for Battle {}
@@ -103,6 +104,7 @@ impl Battle {
                         })
                 })
                 .collect(),
+            round: 0,
         })
     }
 
@@ -175,6 +177,11 @@ impl Battle {
     }
 
     pub async fn advance(&mut self) {
+        self.round += 1;
+        self.history.push(vec![BattleHistory::Text(format!(
+            "--- Round {}",
+            self.round
+        ))]);
         let turns = self.build_turns();
         for turn in turns {
             let actor = self.require_actor(turn.character);
