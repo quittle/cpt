@@ -18,4 +18,7 @@ pub trait Actor: Sync {
 
     /// Get the underlying `Character`
     fn get_mut_character(&mut self) -> &mut Character;
+
+    /// Called when the game is over
+    async fn on_game_over(&self, battle: &Battle);
 }

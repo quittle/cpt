@@ -13,13 +13,6 @@ struct Turn {
     character: CharacterId,
 }
 
-pub enum BattleHistory {
-    Text(String),
-    Id(String),
-    Attack(String),
-    Damage(String),
-}
-
 pub struct Battle {
     pub actors: Vec<(TeamId, Box<dyn Actor>)>,
     pub teams: Vec<Team>,
@@ -163,17 +156,18 @@ impl Battle {
             .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
     }
 
-    pub fn has_more_than_one_team_alive(&self) -> bool {
+    /// Checks if only one team is alive and returns that team. Returns None if multiple teams are alive or if None are
+    pub fn check_only_one_team_alive(&self) -> Option<TeamId> {
         let mut cur_id = None;
         for (team_id, actor) in &self.actors {
             if !actor.get_character().is_dead() {
-                if cur_id.is_some() && cur_id != Some(team_id) {
-                    return true;
+                if cur_id.is_some() && cur_id != Some(*team_id) {
+                    return None;
                 }
-                cur_id = Some(team_id);
+                cur_id = Some(*team_id);
             }
         }
-        false
+        cur_id
     }
 
     pub async fn advance(&mut self) {
@@ -199,16 +193,14 @@ impl Battle {
                     }
                     Action::AttackCharacter(target, attack_name, attack) => {
                         self.history.push(vec![
-                            BattleHistory::Id(actor.get_character().name.clone()),
-                            BattleHistory::Text("used".into()),
-                            BattleHistory::Attack(attack_name),
-                            BattleHistory::Text("on".into()),
-                            BattleHistory::Id(
-                                self.require_actor(target).get_character().name.clone(),
-                            ),
-                            BattleHistory::Text("for".into()),
-                            BattleHistory::Damage(attack.to_string()),
-                            BattleHistory::Text("damage".into()),
+                            BattleHistory::id(&actor.get_character().name),
+                            BattleHistory::text("used"),
+                            BattleHistory::attack(attack_name),
+                            BattleHistory::text("on"),
+                            BattleHistory::id(&self.require_actor(target).get_character().name),
+                            BattleHistory::text("for"),
+                            BattleHistory::damage(attack),
+                            BattleHistory::text("damage"),
                         ]);
 
                         let target_actor = self.require_mut_actor(target);
@@ -222,15 +214,25 @@ impl Battle {
                     std::process::exit(exit_code);
                 }
             }
-            if !self.has_more_than_one_team_alive() {
+            if self.check_only_one_team_alive().is_some() {
                 return;
             }
         }
     }
 
     pub async fn run_to_completion(&mut self) {
-        while self.has_more_than_one_team_alive() {
+        let mut surviving_team = None;
+        while surviving_team.is_none() {
             self.advance().await;
+            surviving_team = self.check_only_one_team_alive()
+        }
+        let team_id = surviving_team.unwrap();
+        let team = self.get_team_from_id(team_id).unwrap();
+        self.history
+            .push(vec![BattleHistory::text(format!("{} won.", team.name))]);
+
+        for (_, actor) in &self.actors {
+            actor.on_game_over(self).await;
         }
     }
 }

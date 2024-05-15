@@ -23,5 +23,11 @@ macro_rules! DeclareWrappedType {
                 f.write_fmt(format_args!("{}", self.$field_name))
             }
         }
+
+        impl From<$struct_name> for String {
+            fn from(source: $struct_name) -> String {
+                source.$field_name.to_string()
+            }
+        }
     };
 }

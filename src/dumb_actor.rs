@@ -54,4 +54,6 @@ impl Actor for DumbActor {
     fn get_mut_character(&mut self) -> &mut Character {
         &mut self.character
     }
+
+    async fn on_game_over(&self, _battle: &Battle) {}
 }
