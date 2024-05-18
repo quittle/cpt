@@ -4,9 +4,9 @@ use crate::*;
 
 pub enum BattleMenuOutput {
     Pass,
-    Attack {
+    Card {
         target: String,
-        attack_name: String,
+        card_name: String,
         base_attack: Attack,
     },
 }
@@ -15,21 +15,21 @@ type BattleMenuAction = MenuAction<BattleMenuOutput>;
 
 pub type BattleMenu = Menu<BattleMenuOutput>;
 
-pub struct AttackSelectionItem {
+pub struct CardSelectionItem {
     target: String,
-    attack_name: String,
+    card_name: String,
     base_attack: Attack,
 }
 
-impl MenuItem<BattleMenuOutput> for AttackSelectionItem {
+impl MenuItem<BattleMenuOutput> for CardSelectionItem {
     fn label(&self) -> &str {
         &self.target
     }
 
     fn action(&self) -> BattleMenuAction {
-        MenuAction::Done(BattleMenuOutput::Attack {
+        MenuAction::Done(BattleMenuOutput::Card {
             target: self.target.clone(),
-            attack_name: self.attack_name.clone(),
+            card_name: self.card_name.clone(),
             base_attack: self.base_attack,
         })
     }
@@ -42,7 +42,7 @@ pub struct ActionsMenu {
 
 impl MenuItem<BattleMenuOutput> for ActionsMenu {
     fn label(&self) -> &str {
-        "Actions"
+        "Cards"
     }
 
     fn action(&self) -> BattleMenuAction {
@@ -51,8 +51,8 @@ impl MenuItem<BattleMenuOutput> for ActionsMenu {
                 .iter()
                 .map(|action| -> Rc<dyn MenuItem<BattleMenuOutput>> {
                     match action {
-                        CharacterAction::Attack { name, base_damage } => Rc::new(AttackMenu {
-                            attack_name: name.clone(),
+                        CharacterAction::Attack { name, base_damage } => Rc::new(CardMenu {
+                            card_name: name.clone(),
                             base_attack: Attack::new(*base_damage),
                             targets: self.targets.clone(),
                         }),
@@ -63,15 +63,15 @@ impl MenuItem<BattleMenuOutput> for ActionsMenu {
     }
 }
 
-pub struct AttackMenu {
-    pub attack_name: String,
+pub struct CardMenu {
+    pub card_name: String,
     pub base_attack: Attack,
     pub targets: Vec<String>,
 }
 
-impl MenuItem<BattleMenuOutput> for AttackMenu {
+impl MenuItem<BattleMenuOutput> for CardMenu {
     fn label(&self) -> &str {
-        &self.attack_name
+        &self.card_name
     }
 
     fn action(&self) -> BattleMenuAction {
@@ -79,9 +79,9 @@ impl MenuItem<BattleMenuOutput> for AttackMenu {
             self.targets
                 .iter()
                 .map(|target| -> Rc<dyn MenuItem<BattleMenuOutput>> {
-                    Rc::new(AttackSelectionItem {
+                    Rc::new(CardSelectionItem {
                         target: target.clone(),
-                        attack_name: self.attack_name.clone(),
+                        card_name: self.card_name.clone(),
                         base_attack: self.base_attack,
                     })
                 })

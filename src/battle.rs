@@ -35,7 +35,7 @@ impl Battle {
             .map(|team| team.members.len())
             .max()
             .unwrap_or(0);
-        let attacks = &battle.attacks;
+        let cards = &battle.cards;
         Ok(Battle {
             history: vec![],
             random_provider,
@@ -68,18 +68,17 @@ impl Battle {
                                     battle_file::Race::Human => CharacterRace::Human,
                                 },
                                 actions: team_member
-                                    .attacks
+                                    .cards
                                     .iter()
-                                    .map(|attack_id| {
-                                        let attack: &battle_file::Attack =
-                                            &attacks[*attack_id as usize];
+                                    .map(|card_id| {
+                                        let card: &battle_file::Card = &cards[*card_id as usize];
                                         assert_eq!(
-                                            attack.id, *attack_id,
+                                            card.id, *card_id,
                                             "Should have already been verified in battle_file.",
                                         );
                                         CharacterAction::Attack {
-                                            name: attack.name.clone(),
-                                            base_damage: attack.base_damage,
+                                            name: card.name.clone(),
+                                            base_damage: card.base_damage,
                                         }
                                     })
                                     .collect(),
@@ -248,7 +247,7 @@ mod tests {
         let battle_json = r#"{
             "title": "Example Game",
             "description": "Example Description",
-            "attacks": [
+            "cards": [
                 {
                     "id": 0,
                     "name": "Kick",
@@ -268,13 +267,13 @@ mod tests {
                             "name": "Member A1",
                             "race": "Human",
                             "base_health": 5,
-                            "attacks": [0]
+                            "cards": [0]
                         },
                         {
                             "name": "Member A2",
                             "race": "Human",
                             "base_health": 5,
-                            "attacks": [1]
+                            "cards": [1]
                         }
                     ]
                 },
@@ -285,7 +284,7 @@ mod tests {
                             "name": "Member B1",
                             "race": "Human",
                             "base_health": 15,
-                            "attacks": [0]
+                            "cards": [0]
                         }
                     ]
                 }

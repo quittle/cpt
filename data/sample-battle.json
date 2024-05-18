@@ -1,7 +1,7 @@
 {
     "title": "Example Game",
     "description": "Example Description",
-    "attacks": [
+    "cards": [
         {
             "id": 0,
             "name": "Kick",
@@ -26,13 +26,13 @@
                     "name": "Member A1",
                     "race": "Human",
                     "base_health": 5,
-                    "attacks": [0]
+                    "cards": [0]
                 },
                 {
                     "name": "Member A2",
                     "race": "Human",
                     "base_health": 5,
-                    "attacks": [1]
+                    "cards": [1]
                 }
             ]
         },
@@ -44,7 +44,7 @@
                     "is_player": true,
                     "race": "Human",
                     "base_health": 15,
-                    "attacks": [2]
+                    "cards": [2]
                 }
             ]
         }

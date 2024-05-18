@@ -7,5 +7,5 @@ export RUSTFLAGS="-D warnings"
 cargo fmt --all
 cargo build --all
 cargo test --all
-cargo clippy --all-targets --all-features --fix --allow-dirty -- -D warnings
+cargo clippy --all-targets --all-features --fix --allow-dirty --allow-no-vcs -- -D warnings
 cargo doc

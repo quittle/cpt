@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Battle {
     pub title: String,
     pub description: String,
-    pub attacks: Vec<Attack>,
+    pub cards: Vec<Card>,
     pub teams: Vec<Team>,
 }
 
@@ -12,9 +12,9 @@ impl Battle {
     pub fn parse_from_str(data: &str) -> Result<Self, String> {
         let battle: Battle = serde_json::from_str(data).map_err(|err| err.to_string())?;
 
-        for (index, attack) in battle.attacks.iter().enumerate() {
-            if attack.id != index as u64 {
-                return Err(format!("Attack with id {} should be {}", attack.id, index));
+        for (index, card) in battle.cards.iter().enumerate() {
+            if card.id != index as u64 {
+                return Err(format!("Card with id {} should be {}", card.id, index));
             }
         }
 
@@ -45,7 +45,7 @@ pub struct TeamMember {
     pub name: String,
     pub race: Race,
     pub base_health: i64,
-    pub attacks: Vec<u64>,
+    pub cards: Vec<u64>,
     #[serde(default)]
     pub is_player: bool,
 }
@@ -56,7 +56,7 @@ pub enum Race {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Attack {
+pub struct Card {
     pub id: u64,
     pub name: String,
     pub base_damage: i64,
@@ -71,7 +71,7 @@ mod tests {
         let data = r#"{
             "title": "Example Game",
             "description": "Example Description",
-            "attacks": [
+            "cards": [
                 {
                     "id": 0,
                     "name": "Kick",
@@ -86,7 +86,7 @@ mod tests {
                             "name": "Member 1",
                             "race": "Human",
                             "base_health": 10,
-                            "attacks": [0]
+                            "cards": [0]
                         }
                     ]
                 }
@@ -95,7 +95,7 @@ mod tests {
 
         let battle: Battle = Battle::parse_from_str(data)?;
         assert_eq!(
-            battle.attacks[battle.teams[0].members[0].attacks[0] as usize].base_damage,
+            battle.cards[battle.teams[0].members[0].cards[0] as usize].base_damage,
             123
         );
 
@@ -107,7 +107,7 @@ mod tests {
         let data = r#"{
             "title": "Example Game",
             "description": "Example Description",
-            "attacks": [],
+            "cards": [],
             "teams": [
                 {
                     "name": "Team A",
@@ -117,14 +117,14 @@ mod tests {
                             "is_player": true,
                             "race": "Human",
                             "base_health": 10,
-                            "attacks": []
+                            "cards": []
                         },
                         {
                             "name": "Member 2",
                             "is_player": true,
                             "race": "Human",
                             "base_health": 10,
-                            "attacks": []
+                            "cards": []
                         }
                     ]
                 }
