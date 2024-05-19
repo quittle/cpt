@@ -5,17 +5,46 @@
         {
             "id": 0,
             "name": "Kick",
-            "base_damage": 1
+            "actions": [
+                {
+                    "type": "damage",
+                    "target": "other",
+                    "amount": 1
+                }
+            ]
         },
         {
             "id": 1,
             "name": "Punch",
-            "base_damage": 2
+            "actions": [
+                {
+                    "type": "damage",
+                    "target": "other",
+                    "amount": 2
+                }
+            ]
         },
         {
             "id": 2,
             "name": "Bite",
-            "base_damage": 3
+            "actions": [
+                {
+                    "type": "damage",
+                    "target": "other",
+                    "amount": 3
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "name": "Heal",
+            "actions": [
+                {
+                    "type": "heal",
+                    "target": "self",
+                    "amount": 3
+                }
+            ]
         }
     ],
     "teams": [
@@ -26,13 +55,13 @@
                     "name": "Member A1",
                     "race": "Human",
                     "base_health": 5,
-                    "cards": [0]
+                    "cards": [0, 2]
                 },
                 {
                     "name": "Member A2",
                     "race": "Human",
                     "base_health": 5,
-                    "cards": [1]
+                    "cards": [0, 1]
                 }
             ]
         },
@@ -44,7 +73,7 @@
                     "is_player": true,
                     "race": "Human",
                     "base_health": 15,
-                    "cards": [2]
+                    "cards": [1, 3]
                 }
             ]
         }

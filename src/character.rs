@@ -30,7 +30,7 @@ pub struct Character {
     pub id: CharacterId,
     pub name: String,
     pub race: CharacterRace,
-    pub actions: Vec<CharacterAction>,
+    pub cards: Vec<CardId>,
     pub health: Health,
 }
 

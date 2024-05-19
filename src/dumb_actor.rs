@@ -7,7 +7,7 @@ pub struct DumbActor {
 
 fn pick_random_card(character: &Character, battle: &Battle) -> (String, Attack) {
     let action = character
-        .actions
+        .cards
         .pick_linear(battle.random_provider.as_ref())
         .unwrap();
     match action {

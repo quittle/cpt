@@ -1,10 +1,11 @@
 use std::fmt::Display;
 
+use crate::battle_file::CardId;
 use crate::*;
 
 pub enum Action {
     Pass,
-    AttackCharacter(CharacterId, String, Attack),
+    Act(CardId, CharacterId),
 }
 
 pub struct ActionRequest {
