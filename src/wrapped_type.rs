@@ -29,5 +29,13 @@ macro_rules! DeclareWrappedType {
                 source.$field_name.to_string()
             }
         }
+
+        impl std::ops::AddAssign for $struct_name {
+            fn add_assign(&mut self, rhs: Self) {
+                *self = Self {
+                    $field_name: self.$field_name + rhs.$field_name,
+                }
+            }
+        }
     };
 }

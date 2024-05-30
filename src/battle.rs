@@ -19,6 +19,7 @@ pub struct Battle {
     pub history: Vec<Vec<BattleHistory>>,
     pub random_provider: Box<dyn RandomProvider>,
     pub round: u16,
+    pub cards: Vec<Card>,
 }
 
 unsafe impl Sync for Battle {}
@@ -35,10 +36,41 @@ impl Battle {
             .map(|team| team.members.len())
             .max()
             .unwrap_or(0);
-        let cards = &battle.cards;
         Ok(Battle {
             history: vec![],
             random_provider,
+            cards: battle
+                .cards
+                .iter()
+                .map(|card| {
+                    let map_target = |target: &battle_file::Target| match target {
+                        battle_file::Target::Me => Target::Me,
+                        battle_file::Target::Others => Target::Others,
+                    };
+                    Card {
+                        id: card.id,
+                        name: card.name.clone(),
+                        actions: card
+                            .actions
+                            .iter()
+                            .map(|action| match action {
+                                battle_file::CardAction::Damage { target, amount } => {
+                                    CardAction::Damage {
+                                        target: map_target(target),
+                                        amount: *amount,
+                                    }
+                                }
+                                battle_file::CardAction::Heal { target, amount } => {
+                                    CardAction::Heal {
+                                        target: map_target(target),
+                                        amount: *amount,
+                                    }
+                                }
+                            })
+                            .collect(),
+                    }
+                })
+                .collect(),
             teams: battle
                 .teams
                 .iter()
@@ -67,21 +99,7 @@ impl Battle {
                                 race: match team_member.race {
                                     battle_file::Race::Human => CharacterRace::Human,
                                 },
-                                actions: team_member
-                                    .cards
-                                    .iter()
-                                    .map(|card_id| {
-                                        let card: &battle_file::Card = &cards[*card_id as usize];
-                                        assert_eq!(
-                                            card.id, *card_id,
-                                            "Should have already been verified in battle_file.",
-                                        );
-                                        CharacterAction::Attack {
-                                            name: card.name.clone(),
-                                            base_damage: card.base_damage,
-                                        }
-                                    })
-                                    .collect(),
+                                cards: team_member.cards.clone(),
                                 health: Health::new(team_member.base_health),
                             };
 
@@ -127,7 +145,7 @@ impl Battle {
         ret
     }
 
-    fn get_actor(&self, character_id: CharacterId) -> Option<&dyn Actor> {
+    pub fn get_actor(&self, character_id: CharacterId) -> Option<&dyn Actor> {
         for (_team_id, actor) in &self.actors {
             if actor.get_character().id == character_id {
                 return Some(actor.as_ref());
@@ -136,13 +154,16 @@ impl Battle {
         None
     }
 
-    fn require_actor(&self, character_id: CharacterId) -> &dyn Actor {
+    pub fn require_actor(&self, character_id: CharacterId) -> &dyn Actor {
         self.get_actor(character_id)
             .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
     }
 
-    fn get_mut_actor(&mut self, character_id: CharacterId) -> Option<&mut dyn Actor> {
-        for (_team_id, actor) in &mut self.actors {
+    fn get_mut_actor(
+        actors: &mut [(TeamId, Box<dyn Actor>)],
+        character_id: CharacterId,
+    ) -> Option<&mut dyn Actor> {
+        for (_team_id, actor) in actors {
             if actor.get_character().id == character_id {
                 return Some(actor.as_mut());
             }
@@ -150,8 +171,11 @@ impl Battle {
         None
     }
 
-    fn require_mut_actor(&mut self, character_id: CharacterId) -> &mut dyn Actor {
-        self.get_mut_actor(character_id)
+    fn require_mut_actor(
+        actors: &mut [(TeamId, Box<dyn Actor>)],
+        character_id: CharacterId,
+    ) -> &mut dyn Actor {
+        Self::get_mut_actor(actors, character_id)
             .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
     }
 
@@ -169,6 +193,56 @@ impl Battle {
         cur_id
     }
 
+    fn handle_action(&mut self, action: Action, actor_id: CharacterId) {
+        match action {
+            Action::Pass => {
+                let actor = self.require_actor(actor_id);
+                self.history.push(vec![
+                    BattleHistory::Id(actor.get_character().name.clone()),
+                    BattleHistory::Text("took no action".into()),
+                ]);
+            }
+            Action::Act(card_id, target_id) => {
+                let card = &self.cards[card_id];
+                let actor = self.require_actor(actor_id);
+                let target_actor = self.require_actor(target_id);
+                let mut history_entry = vec![
+                    BattleHistory::id(&actor.get_character().name),
+                    BattleHistory::text(&"used"),
+                    BattleHistory::attack(&card.name),
+                    BattleHistory::text(&"on"),
+                    BattleHistory::id(&target_actor.get_character().name),
+                    BattleHistory::text(&"."),
+                ];
+
+                for action in &card.actions {
+                    match action {
+                        CardAction::Damage { amount, .. } => {
+                            history_entry.extend([
+                                BattleHistory::damage(amount),
+                                BattleHistory::text(&"damage"),
+                            ]);
+
+                            let target_actor = Self::require_mut_actor(&mut self.actors, target_id);
+                            target_actor.damage(actor_id, Attack::new(*amount));
+                        }
+                        CardAction::Heal { amount, .. } => {
+                            history_entry.extend([
+                                BattleHistory::text(&"healed"),
+                                BattleHistory::damage(amount),
+                            ]);
+
+                            let target_actor = Self::require_mut_actor(&mut self.actors, target_id);
+                            target_actor.heal(actor_id, Health::new(*amount));
+                        }
+                    }
+                }
+
+                self.history.push(history_entry);
+            }
+        }
+    }
+
     pub async fn advance(&mut self) {
         self.round += 1;
         self.history.push(vec![BattleHistory::Text(format!(
@@ -177,35 +251,13 @@ impl Battle {
         ))]);
         let turns = self.build_turns();
         for turn in turns {
-            let actor = self.require_actor(turn.character);
+            let actor: &dyn Actor = self.require_actor(turn.character);
             if actor.get_character().is_dead() {
                 continue;
             }
             let action_result = actor.act(self).await;
             match action_result {
-                Ok(request) => match request.action {
-                    Action::Pass => {
-                        self.history.push(vec![
-                            BattleHistory::Id(actor.get_character().name.clone()),
-                            BattleHistory::Text("took no action".into()),
-                        ]);
-                    }
-                    Action::AttackCharacter(target, attack_name, attack) => {
-                        self.history.push(vec![
-                            BattleHistory::id(&actor.get_character().name),
-                            BattleHistory::text("used"),
-                            BattleHistory::attack(attack_name),
-                            BattleHistory::text("on"),
-                            BattleHistory::id(&self.require_actor(target).get_character().name),
-                            BattleHistory::text("for"),
-                            BattleHistory::damage(attack),
-                            BattleHistory::text("damage"),
-                        ]);
-
-                        let target_actor = self.require_mut_actor(target);
-                        target_actor.damage(turn.character, attack);
-                    }
-                },
+                Ok(request) => self.handle_action(request, turn.character),
                 Err(ActionError::Failure(failure)) => {
                     println!("Error processing {}: {}", turn.character, failure.message);
                 }
@@ -228,7 +280,7 @@ impl Battle {
         let team_id = surviving_team.unwrap();
         let team = self.get_team_from_id(team_id).unwrap();
         self.history
-            .push(vec![BattleHistory::text(format!("{} won.", team.name))]);
+            .push(vec![BattleHistory::text(&format!("{} won.", team.name))]);
 
         for (_, actor) in &self.actors {
             actor.on_game_over(self).await;
@@ -251,12 +303,24 @@ mod tests {
                 {
                     "id": 0,
                     "name": "Kick",
-                    "base_damage": 123
+                    "actions": [
+                        {
+                            "type": "damage",
+                            "target": "others",
+                            "amount": 123
+                        }
+                    ]
                 },
                 {
                     "id": 1,
                     "name": "Punch",
-                    "base_damage": 456
+                    "actions": [
+                        {
+                            "type": "damage",
+                            "target": "others",
+                            "amount": 456
+                        }
+                    ]
                 }
             ],
             "teams": [

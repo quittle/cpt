@@ -13,6 +13,12 @@ pub trait Actor: Sync {
         character.health -= damage;
     }
 
+    /// Heal
+    fn heal(&mut self, _healer: CharacterId, healing: Health) {
+        let character = self.get_mut_character();
+        character.health += healing;
+    }
+
     /// Get the underlying `Character`
     fn get_character(&self) -> &Character;
 

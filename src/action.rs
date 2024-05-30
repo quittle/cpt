@@ -1,15 +1,11 @@
 use std::fmt::Display;
 
+use crate::battle_file::CardId;
 use crate::*;
 
 pub enum Action {
     Pass,
-    AttackCharacter(CharacterId, String, Attack),
-}
-
-pub struct ActionRequest {
-    pub description: String,
-    pub action: Action,
+    Act(CardId, CharacterId),
 }
 
 pub struct ActionFailure {
@@ -46,4 +42,4 @@ impl Display for ActionError {
     }
 }
 
-pub type ActionResult = Result<ActionRequest, ActionError>;
+pub type ActionResult = Result<Action, ActionError>;

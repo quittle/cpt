@@ -13,7 +13,7 @@ impl TerminalActor {
         blocks: &mut Vec<TerminalBlock>,
         mut menu: BattleMenu,
         battle: &Battle,
-    ) -> Result<Option<(CharacterId, String, Attack)>, ActionError> {
+    ) -> Result<Option<(CharacterId, CardId)>, ActionError> {
         blocks.push(TerminalBlock::default());
         blocks.push(TerminalBlock {
             prefix: TerminalSpan {
@@ -24,17 +24,13 @@ impl TerminalActor {
             ..Default::default()
         });
 
-        let action = menu.wait_for_selection(blocks)?;
+        let action = menu.wait_for_selection(blocks, battle)?;
         match action {
             BattleMenuOutput::Pass => Ok(None),
-            BattleMenuOutput::Card {
-                target,
-                card_name,
-                base_attack,
-            } => {
+            BattleMenuOutput::Card { target, card } => {
                 for (_team_id, actor) in &battle.actors {
-                    if actor.get_character().name == target {
-                        return Ok(Some((actor.get_character().id, card_name, base_attack)));
+                    if actor.get_character().id == target {
+                        return Ok(Some((actor.get_character().id, card)));
                     }
                 }
                 Err(ActionError::fail(format!(
@@ -82,7 +78,7 @@ impl TerminalActor {
         blocks
     }
 
-    fn get_enemies(&self, battle: &Battle) -> Vec<String> {
+    fn get_enemies(&self, battle: &Battle) -> Vec<CharacterId> {
         let mut enemies = vec![];
         let my_team = battle.get_team_for_actor(self);
         for team in &battle.teams {
@@ -92,7 +88,7 @@ impl TerminalActor {
                 }
                 let character = &actor.get_character();
                 if Some(*team_id) != my_team && !character.is_dead() {
-                    enemies.push(character.name.clone());
+                    enemies.push(character.id);
                 }
             }
         }
@@ -129,24 +125,17 @@ impl Actor for TerminalActor {
 
         let menu = BattleMenu::new(vec![
             Rc::new(ActionsMenu {
-                actions: self.character.actions.clone(),
+                me: self.character.id,
+                cards: self.character.cards.clone(),
                 targets: self.get_enemies(battle),
             }),
             Rc::new(PassMenuItem {}),
         ]);
 
-        if let Some((target_id, card_name, attack)) =
-            self.get_valid_target(&mut blocks, menu, battle)?
-        {
-            Ok(ActionRequest {
-                description: target_id.to_string(),
-                action: Action::AttackCharacter(target_id, card_name, attack),
-            })
+        if let Some((target_id, card_id)) = self.get_valid_target(&mut blocks, menu, battle)? {
+            Ok(Action::Act(card_id, target_id))
         } else {
-            Ok(ActionRequest {
-                description: "pass".to_string(),
-                action: Action::Pass,
-            })
+            Ok(Action::Pass)
         }
     }
 

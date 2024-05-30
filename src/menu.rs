@@ -11,9 +11,9 @@ use termion::{
 
 use crate::*;
 
-pub struct Menu<T> {
-    items: Vec<MenuItemRc<T>>,
-    prev: Vec<Vec<MenuItemRc<T>>>,
+pub struct Menu<State, T> {
+    items: Vec<MenuItemRc<State, T>>,
+    prev: Vec<Vec<MenuItemRc<State, T>>>,
     selected: Option<usize>,
 }
 
@@ -26,8 +26,8 @@ fn normalize_name(name: &str) -> String {
     name.trim().to_lowercase()
 }
 
-impl<T> Menu<T> {
-    pub fn new(items: Vec<MenuItemRc<T>>) -> Menu<T> {
+impl<State, T> Menu<State, T> {
+    pub fn new(items: Vec<MenuItemRc<State, T>>) -> Menu<State, T> {
         Menu {
             items,
             prev: vec![],
@@ -66,10 +66,10 @@ impl<T> Menu<T> {
         self.selected = None;
     }
 
-    pub fn select_current_selection(&mut self) -> Option<T> {
+    pub fn select_current_selection(&mut self, state: &State) -> Option<T> {
         if let Some(selected) = self.selected {
             if let Some(item) = self.items.get(selected) {
-                match item.action() {
+                match item.action(state) {
                     MenuAction::MenuItem(items) => {
                         self.prev.push(self.items.clone());
                         self.items = items;
@@ -89,24 +89,24 @@ impl<T> Menu<T> {
         }
     }
 
-    pub fn select_by_name(&mut self, name: &str) -> Option<T> {
+    pub fn select_by_name(&mut self, name: &str, state: &State) -> Option<T> {
         let normalized_name = normalize_name(name);
         if normalized_name.is_empty() {
             return None;
         }
 
         for (index, item) in self.items.iter().enumerate() {
-            if normalize_name(item.label()).starts_with(&normalized_name) {
+            if normalize_name(&item.label(state)).starts_with(&normalized_name) {
                 self.selected = Some(index);
             } else if self.has_back() && "back".starts_with(&normalized_name) {
                 self.selected = Some(self.items.len());
             }
         }
 
-        self.select_current_selection()
+        self.select_current_selection(state)
     }
 
-    pub fn show(&self, block: &mut TerminalBlock) {
+    pub fn show(&self, block: &mut TerminalBlock, state: &State) {
         let prefix = |index| {
             if Some(index) == self.selected {
                 ">"
@@ -124,20 +124,24 @@ impl<T> Menu<T> {
                 .items
                 .iter()
                 .enumerate()
-                .map(|(index, item)| format!("{} {}", prefix(index), item.label()))
+                .map(|(index, item)| format!("{} {}", prefix(index), item.label(state)))
                 .collect::<Vec<String>>()
                 .join("\r\n")
             + &back_entry;
         block.contents = menu_str;
     }
 
-    pub fn wait_for_selection(&mut self, blocks: &mut [TerminalBlock]) -> Result<T, ActionError> {
+    pub fn wait_for_selection(
+        &mut self,
+        blocks: &mut [TerminalBlock],
+        state: &State,
+    ) -> Result<T, ActionError> {
         let (_raw_out, _raw_err) = (
             std::io::stdout().into_raw_mode()?,
             std::io::stderr().into_raw_mode()?,
         );
 
-        self.show(&mut blocks[blocks.len() - 2]);
+        self.show(&mut blocks[blocks.len() - 2], state);
         blocks.last_mut().unwrap().contents = "> ".to_string();
         TerminalUi::draw(blocks)?;
 
@@ -146,7 +150,7 @@ impl<T> Menu<T> {
             let terminal_block = blocks.last_mut().unwrap();
             terminal_block.prefix.contents.clear();
             let result = match evt {
-                Event::Key(Key::Char('\n')) => self.select_current_selection(),
+                Event::Key(Key::Char('\n')) => self.select_current_selection(state),
                 Event::Key(Key::Char(c)) => {
                     terminal_block.suffix.contents.push(c);
                     None
@@ -179,7 +183,7 @@ impl<T> Menu<T> {
             if let Some(output) = result {
                 return Ok(output);
             }
-            self.show(&mut blocks[blocks.len() - 2]);
+            self.show(&mut blocks[blocks.len() - 2], state);
             TerminalUi::draw(blocks)?;
         }
         Err(ActionError::fail("Exited input loop early"))
@@ -190,43 +194,43 @@ impl<T> Menu<T> {
     }
 }
 
-type MenuItemRc<T> = Rc<dyn MenuItem<T>>;
+type MenuItemRc<State, T> = Rc<dyn MenuItem<State, T>>;
 
-pub enum MenuAction<T> {
-    MenuItem(Vec<MenuItemRc<T>>),
+pub enum MenuAction<State, T> {
+    MenuItem(Vec<MenuItemRc<State, T>>),
     Done(T),
 }
 
-pub trait MenuItem<T> {
-    fn label(&self) -> &str;
-    fn action(&self) -> MenuAction<T>;
+pub trait MenuItem<State, T> {
+    fn label(&self, state: &State) -> String;
+    fn action(&self, state: &State) -> MenuAction<State, T>;
 }
 
-pub struct StatelessMenuItem<T> {
+pub struct StatelessMenuItem<State, T> {
     pub label: String,
-    pub action: dyn Fn() -> MenuAction<T>,
+    pub action: dyn Fn() -> MenuAction<State, T>,
 }
 
-impl<T> MenuItem<T> for StatelessMenuItem<T> {
-    fn label(&self) -> &str {
-        &self.label
+impl<State, T> MenuItem<State, T> for StatelessMenuItem<State, T> {
+    fn label(&self, _state: &State) -> String {
+        self.label.clone()
     }
 
-    fn action(&self) -> MenuAction<T> {
+    fn action(&self, _state: &State) -> MenuAction<State, T> {
         (self.action)()
     }
 }
 
-pub struct BackMenuItem<T> {
-    pub prev: Vec<MenuItemRc<T>>,
+pub struct BackMenuItem<State, T> {
+    pub prev: Vec<MenuItemRc<State, T>>,
 }
 
-impl<T> MenuItem<T> for BackMenuItem<T> {
-    fn label(&self) -> &str {
-        "Back"
+impl<State, T> MenuItem<State, T> for BackMenuItem<State, T> {
+    fn label(&self, _state: &State) -> String {
+        "Back".to_string()
     }
 
-    fn action(&self) -> MenuAction<T> {
+    fn action(&self, _state: &State) -> MenuAction<State, T> {
         MenuAction::MenuItem(self.prev.clone())
     }
 }

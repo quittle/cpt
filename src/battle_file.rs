@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+pub type LifeNumber = i64;
+pub type CardId = usize;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Battle {
     pub title: String,
@@ -13,7 +16,7 @@ impl Battle {
         let battle: Battle = serde_json::from_str(data).map_err(|err| err.to_string())?;
 
         for (index, card) in battle.cards.iter().enumerate() {
-            if card.id != index as u64 {
+            if card.id != index {
                 return Err(format!("Card with id {} should be {}", card.id, index));
             }
         }
@@ -44,8 +47,8 @@ pub struct Team {
 pub struct TeamMember {
     pub name: String,
     pub race: Race,
-    pub base_health: i64,
-    pub cards: Vec<u64>,
+    pub base_health: LifeNumber,
+    pub cards: Vec<CardId>,
     #[serde(default)]
     pub is_player: bool,
 }
@@ -55,15 +58,33 @@ pub enum Race {
     Human,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum Target {
+    #[serde(alias = "self")]
+    Me,
+    #[serde(alias = "other")]
+    Others,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum CardAction {
+    Damage { target: Target, amount: LifeNumber },
+    Heal { target: Target, amount: LifeNumber },
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Card {
-    pub id: u64,
+    pub id: CardId,
     pub name: String,
-    pub base_damage: i64,
+    pub actions: Vec<CardAction>,
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::battle_file::*;
+
     use super::Battle;
 
     #[test]
@@ -75,7 +96,13 @@ mod tests {
                 {
                     "id": 0,
                     "name": "Kick",
-                    "base_damage": 123
+                    "actions": [
+                        {
+                            "type": "damage",
+                            "target": "others",
+                            "amount": 123
+                        }
+                    ]
                 }
             ],
             "teams": [
@@ -95,8 +122,11 @@ mod tests {
 
         let battle: Battle = Battle::parse_from_str(data)?;
         assert_eq!(
-            battle.cards[battle.teams[0].members[0].cards[0] as usize].base_damage,
-            123
+            battle.cards[battle.teams[0].members[0].cards[0]].actions[0],
+            CardAction::Damage {
+                target: Target::Others,
+                amount: 123
+            }
         );
 
         Ok(())
