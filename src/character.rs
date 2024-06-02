@@ -2,7 +2,7 @@ use std::ops::{Sub, SubAssign};
 
 use crate::*;
 
-DeclareWrappedType!(CharacterId, id, u64);
+DeclareWrappedType!(CharacterId, id, usize);
 
 pub enum CharacterRace {
     Human,

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::*;
 
 DeclareWrappedType!(TeamId, id, u64);
@@ -15,6 +17,7 @@ struct Turn {
 
 pub struct Battle {
     pub actors: Vec<(TeamId, Box<dyn Actor>)>,
+    pub characters: HashMap<CharacterId, Character>,
     pub teams: Vec<Team>,
     pub history: Vec<Vec<BattleHistory>>,
     pub random_provider: Box<dyn RandomProvider>,
@@ -39,6 +42,26 @@ impl Battle {
         Ok(Battle {
             history: vec![],
             random_provider,
+            characters: battle
+                .teams
+                .iter()
+                .flat_map(|team| &team.members)
+                .enumerate()
+                .map(|(index, member)| {
+                    (
+                        CharacterId::new(index),
+                        Character {
+                            id: CharacterId::new(index),
+                            name: member.name.clone(),
+                            race: match member.race {
+                                battle_file::Race::Human => CharacterRace::Human,
+                            },
+                            cards: member.cards.clone(),
+                            health: Health::new(member.base_health),
+                        },
+                    )
+                })
+                .collect(),
             cards: battle
                 .cards
                 .iter()
@@ -89,26 +112,14 @@ impl Battle {
                         .iter()
                         .enumerate()
                         .map(move |(member_index, team_member)| {
-                            let character = Character {
-                                id: CharacterId::new(
-                                    (team_index * max_team_size + member_index)
-                                        .try_into()
-                                        .unwrap(),
-                                ),
-                                name: team_member.name.clone(),
-                                race: match team_member.race {
-                                    battle_file::Race::Human => CharacterRace::Human,
-                                },
-                                cards: team_member.cards.clone(),
-                                health: Health::new(team_member.base_health),
-                            };
-
+                            let character_id =
+                                CharacterId::new(team_index * max_team_size + member_index);
                             (
                                 TeamId::new(team_index.try_into().unwrap()),
                                 if team_member.is_player {
-                                    Box::new(TerminalActor { character }) as Box<dyn Actor>
+                                    Box::new(TerminalActor { character_id }) as Box<dyn Actor>
                                 } else {
-                                    Box::new(DumbActor { character }) as Box<dyn Actor>
+                                    Box::new(DumbActor { character_id }) as Box<dyn Actor>
                                 },
                             )
                         })
@@ -118,9 +129,13 @@ impl Battle {
         })
     }
 
+    pub fn get_character(&self, actor: &dyn Actor) -> &Character {
+        &self.characters[actor.get_character_id()]
+    }
+
     pub fn get_team_for_actor(&self, actor: &dyn Actor) -> Option<TeamId> {
         for (team_id, other_actor) in &self.actors {
-            if actor.get_character().id == other_actor.get_character().id {
+            if actor.get_character_id() == other_actor.get_character_id() {
                 return Some(*team_id);
             }
         }
@@ -134,48 +149,28 @@ impl Battle {
     fn build_turns(&self) -> Vec<Turn> {
         let mut ret = vec![];
         for (_team_id, actor) in &self.actors {
-            if actor.get_character().is_dead() {
+            if self.get_character(actor.as_ref()).is_dead() {
                 continue;
             }
 
             ret.push(Turn {
-                character: actor.get_character().id,
+                character: *actor.get_character_id(),
             });
         }
         ret
     }
 
-    pub fn get_actor(&self, character_id: CharacterId) -> Option<&dyn Actor> {
+    pub fn get_actor(&self, character_id: &CharacterId) -> Option<&dyn Actor> {
         for (_team_id, actor) in &self.actors {
-            if actor.get_character().id == character_id {
+            if actor.get_character_id() == character_id {
                 return Some(actor.as_ref());
             }
         }
         None
     }
 
-    pub fn require_actor(&self, character_id: CharacterId) -> &dyn Actor {
+    pub fn require_actor(&self, character_id: &CharacterId) -> &dyn Actor {
         self.get_actor(character_id)
-            .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
-    }
-
-    fn get_mut_actor(
-        actors: &mut [(TeamId, Box<dyn Actor>)],
-        character_id: CharacterId,
-    ) -> Option<&mut dyn Actor> {
-        for (_team_id, actor) in actors {
-            if actor.get_character().id == character_id {
-                return Some(actor.as_mut());
-            }
-        }
-        None
-    }
-
-    fn require_mut_actor(
-        actors: &mut [(TeamId, Box<dyn Actor>)],
-        character_id: CharacterId,
-    ) -> &mut dyn Actor {
-        Self::get_mut_actor(actors, character_id)
             .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
     }
 
@@ -183,7 +178,7 @@ impl Battle {
     pub fn check_only_one_team_alive(&self) -> Option<TeamId> {
         let mut cur_id = None;
         for (team_id, actor) in &self.actors {
-            if !actor.get_character().is_dead() {
+            if !self.get_character(actor.as_ref()).is_dead() {
                 if cur_id.is_some() && cur_id != Some(*team_id) {
                     return None;
                 }
@@ -193,25 +188,24 @@ impl Battle {
         cur_id
     }
 
-    fn handle_action(&mut self, action: Action, actor_id: CharacterId) {
+    fn handle_action(&mut self, action: Action, character_id: &CharacterId) {
+        let character = &self.characters[character_id];
         match action {
             Action::Pass => {
-                let actor = self.require_actor(actor_id);
                 self.history.push(vec![
-                    BattleHistory::Id(actor.get_character().name.clone()),
+                    BattleHistory::Id(character.name.clone()),
                     BattleHistory::Text("took no action".into()),
                 ]);
             }
             Action::Act(card_id, target_id) => {
                 let card = &self.cards[card_id];
-                let actor = self.require_actor(actor_id);
-                let target_actor = self.require_actor(target_id);
+                let target_character = &self.characters[&target_id];
                 let mut history_entry = vec![
-                    BattleHistory::id(&actor.get_character().name),
+                    BattleHistory::id(&character.name),
                     BattleHistory::text(&"used"),
                     BattleHistory::attack(&card.name),
                     BattleHistory::text(&"on"),
-                    BattleHistory::id(&target_actor.get_character().name),
+                    BattleHistory::id(&target_character.name),
                     BattleHistory::text(&"."),
                 ];
 
@@ -223,8 +217,8 @@ impl Battle {
                                 BattleHistory::text(&"damage"),
                             ]);
 
-                            let target_actor = Self::require_mut_actor(&mut self.actors, target_id);
-                            target_actor.damage(actor_id, Attack::new(*amount));
+                            self.characters.get_mut(&target_id).unwrap().health -=
+                                Attack::new(*amount);
                         }
                         CardAction::Heal { amount, .. } => {
                             history_entry.extend([
@@ -232,8 +226,8 @@ impl Battle {
                                 BattleHistory::damage(amount),
                             ]);
 
-                            let target_actor = Self::require_mut_actor(&mut self.actors, target_id);
-                            target_actor.heal(actor_id, Health::new(*amount));
+                            self.characters.get_mut(&target_id).unwrap().health +=
+                                Health::new(*amount);
                         }
                     }
                 }
@@ -251,13 +245,14 @@ impl Battle {
         ))]);
         let turns = self.build_turns();
         for turn in turns {
-            let actor: &dyn Actor = self.require_actor(turn.character);
-            if actor.get_character().is_dead() {
+            let character = &self.characters[&turn.character];
+            let actor: &dyn Actor = self.require_actor(&turn.character);
+            if character.is_dead() {
                 continue;
             }
             let action_result = actor.act(self).await;
             match action_result {
-                Ok(request) => self.handle_action(request, turn.character),
+                Ok(request) => self.handle_action(request, &turn.character),
                 Err(ActionError::Failure(failure)) => {
                     println!("Error processing {}: {}", turn.character, failure.message);
                 }
@@ -363,11 +358,20 @@ mod tests {
         assert_eq!(battle.teams[1].id.id, 1);
         assert_eq!(battle.actors.len(), 3);
         assert_eq!(battle.actors[0].0.id, 0);
-        assert_eq!(battle.actors[0].1.get_character().name, "Member A1");
+        assert_eq!(
+            battle.characters[battle.actors[0].1.get_character_id()].name,
+            "Member A1"
+        );
         assert_eq!(battle.actors[1].0.id, 0);
-        assert_eq!(battle.actors[1].1.get_character().name, "Member A2");
+        assert_eq!(
+            battle.characters[battle.actors[1].1.get_character_id()].name,
+            "Member A2"
+        );
         assert_eq!(battle.actors[2].0.id, 1);
-        assert_eq!(battle.actors[2].1.get_character().name, "Member B1");
+        assert_eq!(
+            battle.characters[battle.actors[2].1.get_character_id()].name,
+            "Member B1"
+        );
 
         block_on(battle.run_to_completion());
         Ok(())

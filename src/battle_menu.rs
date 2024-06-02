@@ -18,11 +18,7 @@ pub struct CardSelectionItem {
 
 impl MenuItem<Battle, BattleMenuOutput> for CardSelectionItem {
     fn label(&self, battle: &Battle) -> String {
-        if let Some(actor) = battle.get_actor(self.target) {
-            actor.get_character().name.clone()
-        } else {
-            format!("Unknown {}", self.target)
-        }
+        battle.characters[&self.target].name.clone()
     }
 
     fn action(&self, _battle: &Battle) -> BattleMenuAction {

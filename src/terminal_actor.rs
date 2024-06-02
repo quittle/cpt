@@ -4,7 +4,7 @@ use crate::*;
 use async_trait::async_trait;
 
 pub struct TerminalActor {
-    pub character: Character,
+    pub character_id: CharacterId,
 }
 
 impl TerminalActor {
@@ -27,16 +27,7 @@ impl TerminalActor {
         let action = menu.wait_for_selection(blocks, battle)?;
         match action {
             BattleMenuOutput::Pass => Ok(None),
-            BattleMenuOutput::Card { target, card } => {
-                for (_team_id, actor) in &battle.actors {
-                    if actor.get_character().id == target {
-                        return Ok(Some((actor.get_character().id, card)));
-                    }
-                }
-                Err(ActionError::fail(format!(
-                    "Failed to find character id for {target}"
-                )))
-            }
+            BattleMenuOutput::Card { target, card } => Ok(Some((target, card))),
         }
     }
 
@@ -64,7 +55,7 @@ impl TerminalActor {
                 if team_id != &team.id {
                     continue;
                 }
-                let character = &actor.get_character();
+                let character = battle.get_character(actor.as_ref());
                 blocks.push(TerminalBlock::new(if character.is_dead() {
                     format!("- {} ({}). Dead 💀", character.name, character.id)
                 } else {
@@ -86,7 +77,7 @@ impl TerminalActor {
                 if team_id != &team.id {
                     continue;
                 }
-                let character = &actor.get_character();
+                let character = battle.get_character(actor.as_ref());
                 if Some(*team_id) != my_team && !character.is_dead() {
                     enemies.push(character.id);
                 }
@@ -119,14 +110,18 @@ fn battle_history_to_terminal_string(battle_history: &BattleHistory) -> String {
 
 #[async_trait]
 impl Actor for TerminalActor {
+    fn get_character_id(&self) -> &CharacterId {
+        &self.character_id
+    }
+
     async fn act(&self, battle: &Battle) -> ActionResult {
         let mut blocks = self.get_battle_status(battle);
         blocks.push(TerminalBlock::default());
 
         let menu = BattleMenu::new(vec![
             Rc::new(ActionsMenu {
-                me: self.character.id,
-                cards: self.character.cards.clone(),
+                me: self.character_id,
+                cards: battle.get_character(self).cards.clone(),
                 targets: self.get_enemies(battle),
             }),
             Rc::new(PassMenuItem {}),
@@ -137,14 +132,6 @@ impl Actor for TerminalActor {
         } else {
             Ok(Action::Pass)
         }
-    }
-
-    fn get_character(&self) -> &Character {
-        &self.character
-    }
-
-    fn get_mut_character(&mut self) -> &mut Character {
-        &mut self.character
     }
 
     async fn on_game_over(&self, battle: &Battle) {
