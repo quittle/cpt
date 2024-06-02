@@ -6,6 +6,8 @@
         {
             "id": 0,
             "name": "Kick",
+            "description": "Deal 1 damage",
+            "flavor": "Break a leg",
             "actions": [
                 {
                     "type": "damage",
@@ -17,6 +19,8 @@
         {
             "id": 1,
             "name": "Punch",
+            "description": "Deal 2 damage",
+            "flavor": "Warning: Not juice",
             "actions": [
                 {
                     "type": "damage",
@@ -28,6 +32,8 @@
         {
             "id": 2,
             "name": "Bite",
+            "description": "Deal 3 damage",
+            "flavor": "Ew, that's unsanitary",
             "actions": [
                 {
                     "type": "damage",
@@ -39,6 +45,8 @@
         {
             "id": 3,
             "name": "Heal",
+            "description": "Recover 3 health",
+            "flavor": "Ahh, that's nice",
             "actions": [
                 {
                     "type": "heal",

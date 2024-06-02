@@ -64,7 +64,15 @@ pub struct CardMenu {
 
 impl MenuItem<Battle, BattleMenuOutput> for CardMenu {
     fn label(&self, battle: &Battle) -> String {
-        battle.cards[&self.card].name.clone()
+        let card = &battle.cards[&self.card];
+        format!(
+            "{}: {}{}",
+            card.name,
+            card.description,
+            card.flavor
+                .as_ref()
+                .map_or(String::new(), |flavor| format!(" - {}", flavor))
+        )
     }
 
     fn action(&self, battle: &Battle) -> BattleMenuAction {

@@ -81,6 +81,8 @@ pub enum CardAction {
 pub struct Card {
     pub id: CardId,
     pub name: String,
+    pub description: String,
+    pub flavor: Option<String>,
     pub actions: Vec<CardAction>,
 }
 
@@ -100,6 +102,8 @@ mod tests {
                 {
                     "id": 0,
                     "name": "Kick",
+                    "description": "description text",
+                    "flavor": "flavor text",
                     "actions": [
                         {
                             "type": "damage",

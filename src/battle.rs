@@ -81,6 +81,8 @@ impl Battle {
                         Card {
                             id: CardId::new(card.id),
                             name: card.name.clone(),
+                            description: card.description.clone(),
+                            flavor: card.flavor.clone(),
                             actions: card
                                 .actions
                                 .iter()
@@ -313,6 +315,7 @@ mod tests {
                 {
                     "id": 0,
                     "name": "Kick",
+                    "description": "Deal 123 damage",
                     "actions": [
                         {
                             "type": "damage",
@@ -324,6 +327,7 @@ mod tests {
                 {
                     "id": 1,
                     "name": "Punch",
+                    "description": "Deal 456 damage",
                     "actions": [
                         {
                             "type": "damage",

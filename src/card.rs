@@ -29,6 +29,8 @@ impl CardAction {
 pub struct Card {
     pub id: CardId,
     pub name: String,
+    pub description: String,
+    pub flavor: Option<String>,
     pub actions: Vec<CardAction>,
 }
 
