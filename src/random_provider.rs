@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use rand::prelude::*;
 
 pub trait RandomProvider {
@@ -9,11 +11,31 @@ pub trait RandomProvider {
 
 pub trait RandomPicker<T> {
     fn pick_linear(&self, random_provider: &dyn RandomProvider) -> Option<&T>;
+    fn pick_n_unique_linear(&self, count: usize, random_provider: &dyn RandomProvider) -> Vec<&T>;
 }
 
 impl<T> RandomPicker<T> for Vec<T> {
     fn pick_linear(&self, random_provider: &dyn RandomProvider) -> Option<&T> {
-        self.get(random_provider.pick_linear_usize(0, self.len() - 1))
+        if self.is_empty() {
+            None
+        } else {
+            self.get(random_provider.pick_linear_usize(0, self.len() - 1))
+        }
+    }
+
+    fn pick_n_unique_linear(&self, count: usize, random_provider: &dyn RandomProvider) -> Vec<&T> {
+        let mut result = Vec::new();
+        let goal_count = count.min(self.len());
+        result.reserve(goal_count);
+
+        let mut picked_incides = HashSet::new();
+        while result.len() < goal_count {
+            let index = random_provider.pick_linear_usize(0, self.len() - 1);
+            if picked_incides.insert(index) {
+                result.push(&self[index]);
+            }
+        }
+        result
     }
 }
 
@@ -71,7 +93,9 @@ impl RandomProvider for DefaultRandomProvider {
 
 #[cfg(test)]
 mod tests {
-    use crate::{DefaultRandomProvider, RandomProvider};
+    use std::collections::HashSet;
+
+    use crate::{DefaultRandomProvider, RandomPicker, RandomProvider};
 
     #[test]
     fn test_pick_linear() {
@@ -100,6 +124,30 @@ mod tests {
 
             assert_eq!(call_count, 1, "Only the chosen option should be evaluated");
             assert!([1, 2, 3].contains(&option));
+        }
+    }
+
+    #[test]
+    fn test_pick_n_unique_linear() {
+        let random = DefaultRandomProvider::default();
+
+        let values: Vec<u8> = (1..=10).collect();
+
+        for _ in 0..1000 {
+            assert_eq!(values.pick_n_unique_linear(0, &random).len(), 0);
+
+            {
+                let result = values.pick_n_unique_linear(1, &random);
+                assert_eq!(result.len(), 1);
+                assert!(*result[0] >= 1 && *result[0] <= 10);
+            }
+
+            {
+                let result = values.pick_n_unique_linear(100, &random);
+                assert_eq!(result.len(), 10);
+                let result_set: HashSet<u8> = result.iter().map(|v| **v).collect();
+                assert_eq!(result_set.len(), 10);
+            }
         }
     }
 }

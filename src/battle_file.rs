@@ -2,11 +2,13 @@ use serde::{Deserialize, Serialize};
 
 pub type LifeNumber = i64;
 pub type CardId = usize;
+pub type HandSize = u8;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Battle {
     pub title: String,
     pub description: String,
+    pub default_hand_size: HandSize,
     pub cards: Vec<Card>,
     pub teams: Vec<Team>,
 }
@@ -49,6 +51,7 @@ pub struct TeamMember {
     pub race: Race,
     pub base_health: LifeNumber,
     pub cards: Vec<CardId>,
+    pub hand_size: Option<HandSize>,
     #[serde(default)]
     pub is_player: bool,
 }
@@ -92,6 +95,7 @@ mod tests {
         let data = r#"{
             "title": "Example Game",
             "description": "Example Description",
+            "default_hand_size": 5,
             "cards": [
                 {
                     "id": 0,
@@ -137,6 +141,7 @@ mod tests {
         let data = r#"{
             "title": "Example Game",
             "description": "Example Description",
+            "default_hand_size": 5,
             "cards": [],
             "teams": [
                 {

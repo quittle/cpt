@@ -7,7 +7,7 @@ pub struct DumbActor {
 
 fn pick_random_card(character: &Character, battle: &Battle) -> CardId {
     *character
-        .cards
+        .hand
         .pick_linear(battle.random_provider.as_ref())
         .unwrap()
 }

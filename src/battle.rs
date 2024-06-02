@@ -56,12 +56,14 @@ impl Battle {
                             race: match member.race {
                                 battle_file::Race::Human => CharacterRace::Human,
                             },
-                            cards: member
+                            hand: vec![],
+                            deck: member
                                 .cards
                                 .iter()
                                 .map(|card_id| CardId::new(*card_id))
                                 .collect(),
                             health: Health::new(member.base_health),
+                            hand_size: member.hand_size.unwrap_or(battle.default_hand_size),
                         },
                     )
                 })
@@ -252,6 +254,11 @@ impl Battle {
         ))]);
         let turns = self.build_turns();
         for turn in turns {
+            self.characters
+                .get_mut(&turn.character)
+                .unwrap()
+                .reset_hand(self.random_provider.as_ref());
+
             let character = &self.characters[&turn.character];
             let actor: &dyn Actor = self.require_actor(&turn.character);
             if character.is_dead() {
@@ -301,6 +308,7 @@ mod tests {
         let battle_json = r#"{
             "title": "Example Game",
             "description": "Example Description",
+            "default_hand_size": 2,
             "cards": [
                 {
                     "id": 0,
@@ -333,7 +341,8 @@ mod tests {
                             "name": "Member A1",
                             "race": "Human",
                             "base_health": 5,
-                            "cards": [0]
+                            "cards": [0],
+                            "hand_size": 1
                         },
                         {
                             "name": "Member A2",
@@ -369,10 +378,18 @@ mod tests {
             battle.characters[battle.actors[0].1.get_character_id()].name,
             "Member A1"
         );
+        assert_eq!(
+            battle.characters[battle.actors[0].1.get_character_id()].hand_size,
+            1
+        );
         assert_eq!(battle.actors[1].0.id, 0);
         assert_eq!(
             battle.characters[battle.actors[1].1.get_character_id()].name,
             "Member A2"
+        );
+        assert_eq!(
+            battle.characters[battle.actors[1].1.get_character_id()].hand_size,
+            2
         );
         assert_eq!(battle.actors[2].0.id, 1);
         assert_eq!(

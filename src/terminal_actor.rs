@@ -121,7 +121,7 @@ impl Actor for TerminalActor {
         let menu = BattleMenu::new(vec![
             Rc::new(ActionsMenu {
                 me: self.character_id,
-                cards: battle.get_character(self).cards.clone(),
+                cards: battle.get_character(self).hand.clone(),
                 targets: self.get_enemies(battle),
             }),
             Rc::new(PassMenuItem {}),
