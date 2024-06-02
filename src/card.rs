@@ -1,6 +1,7 @@
-use crate::battle_file;
+use crate::{battle_file, DeclareWrappedType};
 
-pub type CardId = battle_file::CardId;
+DeclareWrappedType!(CardId, id, battle_file::CardId);
+
 pub type LifeNumber = battle_file::LifeNumber;
 
 #[derive(Debug, PartialEq, Clone)]

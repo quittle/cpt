@@ -22,7 +22,7 @@ pub struct Battle {
     pub history: Vec<Vec<BattleHistory>>,
     pub random_provider: Box<dyn RandomProvider>,
     pub round: u16,
-    pub cards: Vec<Card>,
+    pub cards: HashMap<CardId, Card>,
 }
 
 unsafe impl Sync for Battle {}
@@ -56,7 +56,11 @@ impl Battle {
                             race: match member.race {
                                 battle_file::Race::Human => CharacterRace::Human,
                             },
-                            cards: member.cards.clone(),
+                            cards: member
+                                .cards
+                                .iter()
+                                .map(|card_id| CardId::new(*card_id))
+                                .collect(),
                             health: Health::new(member.base_health),
                         },
                     )
@@ -70,28 +74,31 @@ impl Battle {
                         battle_file::Target::Me => Target::Me,
                         battle_file::Target::Others => Target::Others,
                     };
-                    Card {
-                        id: card.id,
-                        name: card.name.clone(),
-                        actions: card
-                            .actions
-                            .iter()
-                            .map(|action| match action {
-                                battle_file::CardAction::Damage { target, amount } => {
-                                    CardAction::Damage {
-                                        target: map_target(target),
-                                        amount: *amount,
+                    (
+                        CardId::new(card.id),
+                        Card {
+                            id: CardId::new(card.id),
+                            name: card.name.clone(),
+                            actions: card
+                                .actions
+                                .iter()
+                                .map(|action| match action {
+                                    battle_file::CardAction::Damage { target, amount } => {
+                                        CardAction::Damage {
+                                            target: map_target(target),
+                                            amount: *amount,
+                                        }
                                     }
-                                }
-                                battle_file::CardAction::Heal { target, amount } => {
-                                    CardAction::Heal {
-                                        target: map_target(target),
-                                        amount: *amount,
+                                    battle_file::CardAction::Heal { target, amount } => {
+                                        CardAction::Heal {
+                                            target: map_target(target),
+                                            amount: *amount,
+                                        }
                                     }
-                                }
-                            })
-                            .collect(),
-                    }
+                                })
+                                .collect(),
+                        },
+                    )
                 })
                 .collect(),
             teams: battle
@@ -198,7 +205,7 @@ impl Battle {
                 ]);
             }
             Action::Act(card_id, target_id) => {
-                let card = &self.cards[card_id];
+                let card = &self.cards[&card_id];
                 let target_character = &self.characters[&target_id];
                 let mut history_entry = vec![
                     BattleHistory::id(&character.name),

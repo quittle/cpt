@@ -1,6 +1,5 @@
 use std::fmt::Display;
 
-use crate::battle_file::CardId;
 use crate::*;
 
 pub enum Action {

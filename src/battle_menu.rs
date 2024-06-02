@@ -64,11 +64,11 @@ pub struct CardMenu {
 
 impl MenuItem<Battle, BattleMenuOutput> for CardMenu {
     fn label(&self, battle: &Battle) -> String {
-        battle.cards[self.card].name.clone()
+        battle.cards[&self.card].name.clone()
     }
 
     fn action(&self, battle: &Battle) -> BattleMenuAction {
-        match battle.cards[self.card].target() {
+        match battle.cards[&self.card].target() {
             Target::Me => MenuAction::Done(BattleMenuOutput::Card {
                 target: self.me,
                 card: self.card,
