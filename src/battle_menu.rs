@@ -66,12 +66,17 @@ impl MenuItem<Battle, BattleMenuOutput> for CardMenu {
     fn label(&self, battle: &Battle) -> String {
         let card = &battle.cards[&self.card];
         format!(
-            "{}: {}{}",
+            "{}: {}{}{}{}",
             card.name,
+            termion::style::Bold,
             card.description,
-            card.flavor
-                .as_ref()
-                .map_or(String::new(), |flavor| format!(" - {}", flavor))
+            termion::style::Reset,
+            card.flavor.as_ref().map_or(String::new(), |flavor| format!(
+                " - {}{}{}",
+                termion::style::Italic,
+                flavor,
+                termion::style::Reset
+            ))
         )
     }
 
