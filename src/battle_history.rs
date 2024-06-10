@@ -1,26 +1,35 @@
 use std::fmt::Display;
 
-pub enum BattleHistory {
-    Text(String),
-    Id(String),
-    Attack(String),
-    Damage(String),
+use crate::TemplateEntry;
+
+#[derive(Clone)]
+pub enum BattleTextEntry {
+    Id,
+    Attack,
+    Damage,
 }
 
-impl BattleHistory {
-    pub fn text(text: &dyn Display) -> BattleHistory {
-        BattleHistory::Text(text.to_string())
+impl BattleTextEntry {
+    pub fn id(text: &dyn Display) -> TemplateEntry<Self> {
+        TemplateEntry::Typed(Self::Id, text.to_string())
     }
 
-    pub fn id(text: &dyn Display) -> BattleHistory {
-        BattleHistory::Id(text.to_string())
+    pub fn attack(text: &dyn Display) -> TemplateEntry<Self> {
+        TemplateEntry::Typed(Self::Attack, text.to_string())
     }
 
-    pub fn attack(text: &dyn Display) -> BattleHistory {
-        BattleHistory::Attack(text.to_string())
-    }
-
-    pub fn damage(text: &dyn Display) -> BattleHistory {
-        BattleHistory::Damage(text.to_string())
+    pub fn damage(text: &dyn Display) -> TemplateEntry<Self> {
+        TemplateEntry::Typed(Self::Damage, text.to_string())
     }
 }
+
+#[macro_export]
+macro_rules! battle_markup {
+    ( $( $x:expr ),* $(,)? ) => {
+        {
+            markup!(BattleTextEntry, $($x),*)
+        }
+    }
+}
+
+pub type BattleText = Vec<TemplateEntry<BattleTextEntry>>;

@@ -19,7 +19,7 @@ pub struct Battle {
     pub actors: Vec<(TeamId, Box<dyn Actor>)>,
     pub characters: HashMap<CharacterId, Character>,
     pub teams: Vec<Team>,
-    pub history: Vec<Vec<BattleHistory>>,
+    pub history: Vec<BattleText>,
     pub random_provider: Box<dyn RandomProvider>,
     pub round: u16,
     pub cards: HashMap<CardId, Card>,
@@ -203,39 +203,35 @@ impl Battle {
         let character = &self.characters[character_id];
         match action {
             Action::Pass => {
-                self.history.push(vec![
-                    BattleHistory::Id(character.name.clone()),
-                    BattleHistory::Text("took no action".into()),
+                self.history.push(battle_markup![
+                    BattleTextEntry::id(&character.name),
+                    " took no action",
                 ]);
             }
             Action::Act(card_id, target_id) => {
                 let card = &self.cards[&card_id];
                 let target_character = &self.characters[&target_id];
-                let mut history_entry = vec![
-                    BattleHistory::id(&character.name),
-                    BattleHistory::text(&"used"),
-                    BattleHistory::attack(&card.name),
-                    BattleHistory::text(&"on"),
-                    BattleHistory::id(&target_character.name),
-                    BattleHistory::text(&"."),
+                let mut history_entry = battle_markup![
+                    BattleTextEntry::id(&character.name),
+                    " used ",
+                    BattleTextEntry::attack(&card.name),
+                    " on ",
+                    BattleTextEntry::id(&target_character.name),
+                    ". "
                 ];
 
                 for action in &card.actions {
                     match action {
                         CardAction::Damage { amount, .. } => {
-                            history_entry.extend([
-                                BattleHistory::damage(amount),
-                                BattleHistory::text(&"damage"),
-                            ]);
+                            history_entry
+                                .extend(battle_markup![BattleTextEntry::damage(amount), " damage"]);
 
                             self.characters.get_mut(&target_id).unwrap().health -=
                                 Attack::new(*amount);
                         }
                         CardAction::Heal { amount, .. } => {
-                            history_entry.extend([
-                                BattleHistory::text(&"healed"),
-                                BattleHistory::damage(amount),
-                            ]);
+                            history_entry
+                                .extend(battle_markup!["Healed ", BattleTextEntry::damage(amount)]);
 
                             self.characters.get_mut(&target_id).unwrap().health +=
                                 Health::new(*amount);
@@ -250,10 +246,8 @@ impl Battle {
 
     pub async fn advance(&mut self) {
         self.round += 1;
-        self.history.push(vec![BattleHistory::Text(format!(
-            "--- Round {}",
-            self.round
-        ))]);
+        self.history
+            .push(battle_markup![format!("--- Round {}", self.round)]);
         let turns = self.build_turns();
         for turn in turns {
             self.characters
@@ -291,7 +285,7 @@ impl Battle {
         let team_id = surviving_team.unwrap();
         let team = self.get_team_from_id(team_id).unwrap();
         self.history
-            .push(vec![BattleHistory::text(&format!("{} won.", team.name))]);
+            .push(battle_markup![format!("{} won.", team.name)]);
 
         for (_, actor) in &self.actors {
             actor.on_game_over(self).await;

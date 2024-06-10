@@ -35,13 +35,7 @@ impl TerminalActor {
         let mut blocks = vec![];
 
         for entry in &battle.history {
-            blocks.push(TerminalBlock::new(
-                entry
-                    .iter()
-                    .map(battle_history_to_terminal_string)
-                    .collect::<Vec<String>>()
-                    .join(" "),
-            ));
+            blocks.push(TerminalBlock::new(battle_history_to_terminal_string(entry)));
         }
 
         if !battle.history.is_empty() {
@@ -87,25 +81,32 @@ impl TerminalActor {
     }
 }
 
-fn battle_history_to_terminal_string(battle_history: &BattleHistory) -> String {
-    match battle_history {
-        BattleHistory::Text(text) => text.clone(),
-        BattleHistory::Id(text) => {
-            format!("{}{}{}", termion::style::Bold, text, termion::style::Reset)
+struct TerminalTemplateRenderer {}
+
+impl TemplateRenderer<BattleTextEntry> for TerminalTemplateRenderer {
+    fn render(&self, battle_text: &BattleTextEntry, text: &str) -> String {
+        match battle_text {
+            BattleTextEntry::Id => {
+                format!("{}{}{}", termion::style::Bold, text, termion::style::Reset)
+            }
+            BattleTextEntry::Attack => format!(
+                "{}{}{}",
+                termion::color::Fg(termion::color::Yellow),
+                text,
+                termion::color::Fg(termion::color::Reset),
+            ),
+            BattleTextEntry::Damage => format!(
+                "{}{}{}",
+                termion::color::Fg(termion::color::Red),
+                text,
+                termion::color::Fg(termion::color::Reset),
+            ),
         }
-        BattleHistory::Attack(text) => format!(
-            "{}{}{}",
-            termion::color::Fg(termion::color::Yellow),
-            text,
-            termion::color::Fg(termion::color::Reset),
-        ),
-        BattleHistory::Damage(text) => format!(
-            "{}{}{}",
-            termion::color::Fg(termion::color::Red),
-            text,
-            termion::color::Fg(termion::color::Reset),
-        ),
     }
+}
+
+fn battle_history_to_terminal_string(battle_text: &BattleText) -> String {
+    Template::new(TerminalTemplateRenderer {}).render(battle_text)
 }
 
 #[async_trait]
