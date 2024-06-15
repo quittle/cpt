@@ -58,15 +58,31 @@ impl<TypeId> From<String> for TemplateEntry<TypeId> {
 
 #[macro_export]
 macro_rules! markup {
-    ( $type_id:tt, $( $x:expr ),* ) => {
-        {
-            vec![
-                $(
-                    Into::<$crate::TemplateEntry::<$type_id>>::into($x)
-                ),*
-            ]
-        }
+    // set up the array and push each list item into it by recursively invoking this macro
+    ($type_id:ident: [$($rest:tt)*]) => {{
+        let mut temp_vec = Vec::<$crate::TemplateEntry<$type_id>>::new();
+        markup!((temp_vec:$type_id): [$($rest)*]);
+        temp_vec
+    }};
+
+    // Expand leading `@` into `$type_id::`
+    (($temp_vec:ident:$type_id:ident): [@ $($rest:tt)*]) => {
+        markup!(($temp_vec:$type_id): [$type_id::$($rest)*])
     };
+
+    // Handle all other entries
+    (($temp_vec:ident:$type_id:ident): [$expr:expr$(, $($rest:tt)*)?]) => {
+        #[allow(clippy::vec_init_then_push)]
+        {
+            // Append the entries
+            $temp_vec.push(($expr).into());
+        }
+        // Recursively expand
+        $(markup!(($temp_vec:$type_id): [$($rest)*]))?
+    };
+
+    // Supports trailing commas
+    (($temp_vec:ident:$type_id:ident): []) => {}
 }
 
 #[cfg(test)]
@@ -82,6 +98,10 @@ mod tests {
         pub fn blue(str: &str) -> TemplateEntry<TestType> {
             TemplateEntry::Typed(TestType::Blue, str.to_string())
         }
+
+        pub fn red(str: &str) -> TemplateEntry<TestType> {
+            TemplateEntry::Typed(TestType::Red, str.to_string())
+        }
     }
 
     struct TestRenderer {}
@@ -96,9 +116,9 @@ mod tests {
     }
 
     macro_rules! test_markup {
-        ( $( $x:expr ),* ) => {
+        ( $( $tokens:tt )* ) => {
             {
-                markup!(TestType, $($x),*)
+                markup!(TestType: [$($tokens)*])
             }
         }
     }
@@ -108,12 +128,13 @@ mod tests {
         let example = test_markup!(
             "abc",
             crate::TemplateEntry::Typed(TestType::Red, "other text".into()),
-            TestType::blue("final text")
+            TestType::blue("final text"),
+            @red("other text")
         );
         let template = Template::new(TestRenderer {});
         assert_eq!(
             template.render(&example),
-            "abc<red>other text</red><blue>final text</blue>"
+            "abc<red>other text</red><blue>final text</blue><red>other text</red>"
         );
     }
 }

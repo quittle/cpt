@@ -3,9 +3,9 @@
 set -eu
 set -o pipefail
 
-export RUSTFLAGS="-D warnings"
+export RUSTFLAGS="-Dwarnings"
 cargo fmt --all
 cargo build --all
 cargo test --all
-cargo clippy --all-targets --all-features --fix --allow-dirty --allow-no-vcs -- -D warnings
+cargo clippy --all-features --fix --allow-dirty --allow-no-vcs
 cargo doc

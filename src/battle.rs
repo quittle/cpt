@@ -204,7 +204,7 @@ impl Battle {
         match action {
             Action::Pass => {
                 self.history.push(battle_markup![
-                    BattleTextEntry::id(&character.name),
+                    @id(&character.name),
                     " took no action",
                 ]);
             }
@@ -212,26 +212,24 @@ impl Battle {
                 let card = &self.cards[&card_id];
                 let target_character = &self.characters[&target_id];
                 let mut history_entry = battle_markup![
-                    BattleTextEntry::id(&character.name),
+                    @id(&character.name),
                     " used ",
-                    BattleTextEntry::attack(&card.name),
+                    @attack(&card.name),
                     " on ",
-                    BattleTextEntry::id(&target_character.name),
+                    @id(&target_character.name),
                     ". "
                 ];
 
                 for action in &card.actions {
                     match action {
                         CardAction::Damage { amount, .. } => {
-                            history_entry
-                                .extend(battle_markup![BattleTextEntry::damage(amount), " damage"]);
+                            history_entry.extend(battle_markup![@damage(amount), " damage"]);
 
                             self.characters.get_mut(&target_id).unwrap().health -=
                                 Attack::new(*amount);
                         }
                         CardAction::Heal { amount, .. } => {
-                            history_entry
-                                .extend(battle_markup!["Healed ", BattleTextEntry::damage(amount)]);
+                            history_entry.extend(battle_markup!["Healed ", @damage(amount)]);
 
                             self.characters.get_mut(&target_id).unwrap().health +=
                                 Health::new(*amount);

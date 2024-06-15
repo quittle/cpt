@@ -25,9 +25,9 @@ impl BattleTextEntry {
 
 #[macro_export]
 macro_rules! battle_markup {
-    ( $( $x:expr ),* $(,)? ) => {
+    ( $($tokens:tt)*  ) => {
         {
-            markup!(BattleTextEntry, $($x),*)
+            markup!(BattleTextEntry: [$($tokens)*])
         }
     }
 }
