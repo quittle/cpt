@@ -5,26 +5,11 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::*;
 
-fn get_len_of_block(block: &TerminalBlock) -> usize {
+fn get_raw_str_width(s: &str) -> usize {
     // https://superuser.com/a/380778
     let ansi_color: Regex = Regex::new(r"\x1b\[[0-9;]*m").unwrap();
 
-    let prefix = ansi_color.replace_all(&block.prefix.contents, "");
-    let prefix_len = prefix.width();
-    let contents = ansi_color.replace_all(&block.contents, "");
-    let contents_len = contents.width();
-    let suffix = ansi_color.replace_all(&block.suffix.contents, "");
-    let suffix_len = suffix.width();
-
-    if let Some(index) = suffix.rfind('\n') {
-        suffix_len - index - 1
-    } else if let Some(index) = contents.rfind('\n') {
-        suffix_len + (contents_len - index) - 1
-    } else if let Some(index) = prefix.rfind('\n') {
-        suffix_len + contents_len + (prefix_len - index) - 1
-    } else {
-        suffix_len + contents_len + prefix_len
-    }
+    ansi_color.replace_all(s, "").width()
 }
 
 pub struct TerminalUi {}
@@ -34,14 +19,9 @@ impl TerminalUi {
         let (width, _height) = Self::get_dimensions();
 
         let mut raw_stdout = std::io::stdout();
-        write!(raw_stdout, "{}\r", termion::clear::All)?;
-        for (i, block) in blocks.iter().enumerate() {
-            block.prefix.write(&mut raw_stdout)?;
-            raw_stdout.write_all(block.contents.as_bytes())?;
-            block.suffix.write(&mut raw_stdout)?;
-            if i < blocks.len() - 1 {
-                raw_stdout.write_all(" ".repeat(width - get_len_of_block(block)).as_bytes())?;
-            }
+        write!(raw_stdout, "\r{}\r", termion::clear::All)?;
+        for block in blocks.iter() {
+            block.draw(width, &mut raw_stdout)?;
         }
         raw_stdout.flush()?;
         Ok(())
@@ -75,6 +55,7 @@ impl From<String> for TerminalSpan {
 
 impl TerminalSpan {
     pub fn write(&self, write: &mut dyn Write) -> std::io::Result<()> {
+        assert!(!self.contents.contains('\n'));
         if let Some(color) = &self.color {
             write!(write, "{}", termion::color::Fg(color.as_ref()))?;
         }
@@ -97,5 +78,18 @@ impl TerminalBlock {
             contents: contents.as_ref().to_string(),
             ..Default::default()
         }
+    }
+
+    pub fn draw(&self, width: usize, writer: &mut dyn Write) -> std::io::Result<()> {
+        self.prefix.write(writer)?;
+        for line in self.contents.lines() {
+            writer.write_all(line.as_bytes())?;
+            writer.write_all(
+                " ".repeat(width - (get_raw_str_width(line) % width))
+                    .as_bytes(),
+            )?;
+        }
+        self.suffix.write(writer)?;
+        Ok(())
     }
 }

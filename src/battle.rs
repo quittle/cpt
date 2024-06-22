@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::process::ExitCode;
 
 use crate::*;
 
@@ -242,7 +243,7 @@ impl Battle {
         }
     }
 
-    pub async fn advance(&mut self) {
+    pub async fn advance(&mut self) -> Result<(), ExitCode> {
         self.round += 1;
         self.history
             .push(battle_markup![format!("--- Round {}", self.round)]);
@@ -265,19 +266,20 @@ impl Battle {
                     println!("Error processing {}: {}", turn.character, failure.message);
                 }
                 Err(ActionError::Exit(exit_code)) => {
-                    std::process::exit(exit_code);
+                    return Err(exit_code);
                 }
             }
             if self.check_only_one_team_alive().is_some() {
-                return;
+                return Ok(());
             }
         }
+        Ok(())
     }
 
-    pub async fn run_to_completion(&mut self) {
+    pub async fn run_to_completion(&mut self) -> Result<(), ExitCode> {
         let mut surviving_team = None;
         while surviving_team.is_none() {
-            self.advance().await;
+            self.advance().await?;
             surviving_team = self.check_only_one_team_alive()
         }
         let team_id = surviving_team.unwrap();
@@ -288,6 +290,7 @@ impl Battle {
         for (_, actor) in &self.actors {
             actor.on_game_over(self).await;
         }
+        Ok(())
     }
 }
 
@@ -393,7 +396,7 @@ mod tests {
             "Member B1"
         );
 
-        block_on(battle.run_to_completion());
+        block_on(battle.run_to_completion()).unwrap();
         Ok(())
     }
 }

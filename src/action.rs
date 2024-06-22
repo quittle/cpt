@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, process::ExitCode};
 
 use crate::*;
 
@@ -13,7 +13,7 @@ pub struct ActionFailure {
 
 pub enum ActionError {
     Failure(ActionFailure),
-    Exit(i32),
+    Exit(ExitCode),
 }
 
 impl ActionError {
@@ -36,7 +36,7 @@ impl Display for ActionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Failure(failure) => f.write_str(&failure.message),
-            Self::Exit(code) => write!(f, "Exit Code {code}"),
+            Self::Exit(code) => write!(f, "Exit Code {:?}", code),
         }
     }
 }

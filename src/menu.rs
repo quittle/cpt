@@ -1,12 +1,12 @@
 use std::{
     cmp::{max, min},
+    process::ExitCode,
     rc::Rc,
 };
 
 use termion::{
     event::{Event, Key},
     input::TermRead,
-    raw::IntoRawMode,
 };
 
 use crate::*;
@@ -115,18 +115,18 @@ impl<State, T> Menu<State, T> {
             }
         };
         let back_entry = if self.has_back() {
-            format!("\r\n{} Back", prefix(self.items.len()))
+            format!("\n{} Back", prefix(self.items.len()))
         } else {
             String::new()
         };
-        let menu_str = "Menu:\r\n".to_string()
+        let menu_str = "Menu:\n".to_string()
             + &self
                 .items
                 .iter()
                 .enumerate()
                 .map(|(index, item)| format!("{} {}", prefix(index), item.label(state)))
                 .collect::<Vec<String>>()
-                .join("\r\n")
+                .join("\n")
             + &back_entry;
         block.contents = menu_str;
     }
@@ -136,11 +136,6 @@ impl<State, T> Menu<State, T> {
         blocks: &mut [TerminalBlock],
         state: &State,
     ) -> Result<T, ActionError> {
-        let (_raw_out, _raw_err) = (
-            std::io::stdout().into_raw_mode()?,
-            std::io::stderr().into_raw_mode()?,
-        );
-
         self.show(&mut blocks[blocks.len() - 2], state);
         blocks.last_mut().unwrap().contents = "> ".to_string();
         TerminalUi::draw(blocks)?;
@@ -160,7 +155,7 @@ impl<State, T> Menu<State, T> {
                     None
                 }
                 Event::Key(Key::Ctrl('c' | 'd')) => {
-                    return Err(ActionError::Exit(13));
+                    return Err(ActionError::Exit(ExitCode::from(13)));
                 }
                 Event::Key(Key::Esc) => {
                     self.go_back();
