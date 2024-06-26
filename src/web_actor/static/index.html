@@ -1,0 +1,39 @@
+<h1>CPD</h1>
+<button>Send Action</button>
+<ul>
+
+</ul>
+
+<script>
+    const evtSource = new EventSource("/sse");
+    const ul = document.getElementsByTagName("ul")[0];
+
+    let globalData = null;
+
+    evtSource.addEventListener("battle_state", e => {
+        const li = document.createElement("li");
+        li.textContent = `Received Chat: ${e.data}`;
+        ul.appendChild(li);
+
+        globalData = JSON.parse(e.data);
+    });
+
+    evtSource.onopen = async (e) => {
+        await fetch("/info");
+    }
+
+    evtSource.onerror = (err) => {
+        console.error("EventSource failure:", err);
+    };
+
+    document.getElementsByTagName("button")[0].addEventListener("click", async () => {
+        await fetch("/act", {
+            method: "POST", headers: {
+                "Content-Type": "application/json",
+            }, body: JSON.stringify({
+                card_id: globalData.card_id,
+                target_id: globalData.character_id,
+            })
+        });
+    });
+</script>

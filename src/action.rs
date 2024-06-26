@@ -2,15 +2,18 @@ use std::{fmt::Display, process::ExitCode};
 
 use crate::*;
 
+#[derive(Debug)]
 pub enum Action {
     Pass,
     Act(CardId, CharacterId),
 }
 
+#[derive(Debug)]
 pub struct ActionFailure {
     pub message: String,
 }
 
+#[derive(Debug)]
 pub enum ActionError {
     Failure(ActionFailure),
     Exit(ExitCode),

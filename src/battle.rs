@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::process::ExitCode;
 
+use futures::future::join_all;
+use web_actor::WebActor;
+
 use crate::*;
 
 DeclareWrappedType!(TeamId, id, u64);
@@ -29,7 +32,7 @@ pub struct Battle {
 unsafe impl Sync for Battle {}
 
 impl Battle {
-    pub fn deserialize(
+    pub async fn deserialize(
         data: &str,
         random_provider: Box<dyn RandomProvider>,
     ) -> Result<Self, String> {
@@ -115,28 +118,38 @@ impl Battle {
                     name: team.name.clone(),
                 })
                 .collect(),
-            actors: battle
-                .teams
-                .iter()
-                .enumerate()
-                .flat_map(|(team_index, team)| {
-                    team.members
-                        .iter()
-                        .enumerate()
-                        .map(move |(member_index, team_member)| {
-                            let character_id =
-                                CharacterId::new(team_index * max_team_size + member_index);
-                            (
-                                TeamId::new(team_index.try_into().unwrap()),
-                                if team_member.is_player {
-                                    Box::new(TerminalActor { character_id }) as Box<dyn Actor>
-                                } else {
-                                    Box::new(DumbActor { character_id }) as Box<dyn Actor>
-                                },
-                            )
-                        })
-                })
-                .collect(),
+            actors: join_all(
+                battle
+                    .teams
+                    .iter()
+                    .enumerate()
+                    .flat_map(|(team_index, team)| {
+                        team.members
+                            .iter()
+                            .enumerate()
+                            .map(move |(member_index, team_member)| {
+                                let character_id =
+                                    CharacterId::new(team_index * max_team_size + member_index);
+                                async move {
+                                    (
+                                        TeamId::new(team_index.try_into().unwrap()),
+                                        if team_member.is_player {
+                                            if cfg!(feature = "terminal_ui") {
+                                                Box::new(TerminalActor { character_id })
+                                                    as Box<dyn Actor>
+                                            } else {
+                                                Box::new(WebActor::new(character_id).await.unwrap())
+                                                    as Box<dyn Actor>
+                                            }
+                                        } else {
+                                            Box::new(DumbActor { character_id }) as Box<dyn Actor>
+                                        },
+                                    )
+                                }
+                            })
+                    }),
+            )
+            .await,
             round: 0,
         })
     }
@@ -181,8 +194,22 @@ impl Battle {
         None
     }
 
+    pub fn get_mut_actor(&mut self, character_id: &CharacterId) -> Option<&mut dyn Actor> {
+        for (_team_id, actor) in &mut self.actors {
+            if actor.get_character_id() == character_id {
+                return Some(actor.as_mut());
+            }
+        }
+        None
+    }
+
     pub fn require_actor(&self, character_id: &CharacterId) -> &dyn Actor {
         self.get_actor(character_id)
+            .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
+    }
+
+    pub fn require_mut_actor(&mut self, character_id: &CharacterId) -> &mut dyn Actor {
+        self.get_mut_actor(character_id)
             .unwrap_or_else(|| panic!("Unable to find actor with character id: {character_id}"))
     }
 
@@ -255,10 +282,10 @@ impl Battle {
                 .reset_hand(self.random_provider.as_ref());
 
             let character = &self.characters[&turn.character];
-            let actor: &dyn Actor = self.require_actor(&turn.character);
             if character.is_dead() {
                 continue;
             }
+            let actor: &dyn Actor = self.require_actor(&turn.character);
             let action_result = actor.act(self).await;
             match action_result {
                 Ok(request) => self.handle_action(request, &turn.character),
@@ -300,8 +327,8 @@ mod tests {
 
     use crate::{Battle, DefaultRandomProvider};
 
-    #[test]
-    fn test_deserialize() -> Result<(), String> {
+    #[tokio::test]
+    async fn test_deserialize() -> Result<(), String> {
         let battle_json = r#"{
             "title": "Example Game",
             "description": "Example Description",
@@ -364,7 +391,8 @@ mod tests {
                 }
             ]
         }"#;
-        let mut battle = Battle::deserialize(battle_json, Box::<DefaultRandomProvider>::default())?;
+        let mut battle =
+            Battle::deserialize(battle_json, Box::<DefaultRandomProvider>::default()).await?;
         assert_eq!(battle.history.len(), 0);
         assert_eq!(battle.teams.len(), 2);
         assert_eq!(battle.teams[0].name, "Team A".to_string());

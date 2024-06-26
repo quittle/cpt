@@ -1,23 +1,22 @@
-use std::{
-    io::{stderr, stdout},
-    process::ExitCode,
-};
-
 use cpd::*;
-use futures::executor::block_on;
-use termion::raw::IntoRawMode;
+use std::process::ExitCode;
+#[cfg(feature = "terminal_ui")]
+use {std::io, termion::raw::IntoRawMode};
 
-fn main() -> Result<(), ExitCode> {
+#[actix_web::main]
+async fn main() -> Result<(), ExitCode> {
     let mut battle = Battle::deserialize(
         include_str!("../data/sample-battle.json"),
         Box::<DefaultRandomProvider>::default(),
     )
+    .await
     .unwrap();
+    #[cfg(feature = "terminal_ui")]
     let (_out, _err) = (
-        stdout().into_raw_mode().unwrap(),
-        stderr().into_raw_mode().unwrap(),
+        io::stdout().into_raw_mode().unwrap(),
+        io::stderr().into_raw_mode().unwrap(),
     );
-    block_on(battle.run_to_completion())?;
+    battle.run_to_completion().await?;
     println!("Game over");
 
     Ok(())
