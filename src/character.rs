@@ -1,11 +1,14 @@
 use std::ops::{Sub, SubAssign};
 
+use serde::Serialize;
+
 use crate::*;
 
 type HandSize = battle_file::HandSize;
 
 DeclareWrappedType!(CharacterId, id, usize);
 
+#[derive(Serialize)]
 pub enum CharacterRace {
     Human,
 }
@@ -28,6 +31,7 @@ impl SubAssign<Attack> for Health {
     }
 }
 
+#[derive(Serialize)]
 pub struct Character {
     pub id: CharacterId,
     pub name: String,

@@ -1,16 +1,18 @@
+use serde::Serialize;
+
 use crate::{battle_file, DeclareWrappedType};
 
 DeclareWrappedType!(CardId, id, battle_file::CardId);
 
 pub type LifeNumber = battle_file::LifeNumber;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum Target {
     Me,
     Others,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum CardAction {
     Damage { target: Target, amount: LifeNumber },
     Heal { target: Target, amount: LifeNumber },
@@ -25,7 +27,7 @@ impl CardAction {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Card {
     pub id: CardId,
     pub name: String,

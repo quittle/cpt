@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use serde::Serialize;
+
 pub trait TemplateRenderer<TypeId> {
     fn render_text(&self, string: &str) -> String {
         string.to_string()
@@ -8,6 +10,7 @@ pub trait TemplateRenderer<TypeId> {
     fn render(&self, type_id: &TypeId, string: &str) -> String;
 }
 
+#[derive(Serialize)]
 pub enum TemplateEntry<TypeId> {
     Text(String),
     Typed(TypeId, String),

@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
+use serde::Serialize;
+
 use crate::TemplateEntry;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub enum BattleTextEntry {
     Id,
     Attack,

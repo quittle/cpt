@@ -2,13 +2,14 @@ use std::collections::HashMap;
 use std::process::ExitCode;
 
 use futures::future::join_all;
+use serde::Serialize;
 use web_actor::WebActor;
 
 use crate::*;
 
 DeclareWrappedType!(TeamId, id, u64);
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Team {
     pub id: TeamId,
     pub name: String,
@@ -19,11 +20,14 @@ struct Turn {
     character: CharacterId,
 }
 
+#[derive(Serialize)]
 pub struct Battle {
+    #[serde(skip_serializing)]
     pub actors: Vec<(TeamId, Box<dyn Actor>)>,
     pub characters: HashMap<CharacterId, Character>,
     pub teams: Vec<Team>,
     pub history: Vec<BattleText>,
+    #[serde(skip_serializing)]
     pub random_provider: Box<dyn RandomProvider>,
     pub round: u16,
     pub cards: HashMap<CardId, Card>,

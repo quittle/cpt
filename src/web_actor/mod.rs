@@ -1,9 +1,4 @@
-use std::{
-    sync::Arc,
-    thread::{self, JoinHandle},
-    time::Duration,
-};
-
+use crate::{Action, ActionError, ActionFailure, ActionResult, Actor, Battle, CardId, CharacterId};
 use actix_web::{
     dev::{Server, ServerHandle, ServiceResponse},
     get,
@@ -14,12 +9,15 @@ use actix_web_lab::sse;
 use async_trait::async_trait;
 use futures::executor::block_on;
 use serde::{Deserialize, Serialize};
+use std::{
+    sync::Arc,
+    thread::{self, JoinHandle},
+    time::Duration,
+};
 use tokio::sync::{
-    mpsc::{channel, Receiver, Sender},
+    mpsc::{channel, error::SendError, Receiver, Sender},
     Mutex,
 };
-
-use crate::{Action, ActionResult, Actor, Battle, CardId, CharacterId};
 
 type ArcEventSender = Arc<Mutex<Option<Sender<sse::Event>>>>;
 type ArcServerState = Arc<Mutex<ServerState>>;
@@ -123,7 +121,10 @@ impl WebActor {
                 .service(handle_act)
                 .service(handle_info)
                 .service(handle_sse)
-                .service(actix_files::Files::new("/", "src/web_actor/static"))
+                .service(actix_files::Files::new(
+                    "/",
+                    concat!(env!("OUT_DIR"), "/static"),
+                ))
         })
         .disable_signals()
         .bind((host, port))
@@ -155,12 +156,6 @@ impl Drop for WebActor {
     }
 }
 
-#[derive(Serialize)]
-struct ExampleData {
-    character_id: usize,
-    card_id: usize,
-}
-
 #[async_trait]
 impl Actor for WebActor {
     fn get_character_id(&self) -> &CharacterId {
@@ -168,11 +163,11 @@ impl Actor for WebActor {
     }
 
     async fn act(&self, battle: &Battle) -> ActionResult {
-        self.send_battle_state(battle).await;
+        self.send_battle_state(battle).await?;
         loop {
             match self.action_rx.lock().await.recv().await {
                 Some(BattleServerEvent::BattleRequest) => {
-                    self.send_battle_state(battle).await;
+                    self.send_battle_state(battle).await?;
                 }
                 Some(BattleServerEvent::Action(action)) => {
                     return action;
@@ -185,23 +180,35 @@ impl Actor for WebActor {
     async fn on_game_over(&self, _battle: &Battle) {}
 }
 
+#[derive(Serialize)]
+struct BattleState<'battle> {
+    battle: &'battle Battle,
+    character_id: CharacterId,
+}
+
 impl WebActor {
-    async fn send_battle_state(&self, battle: &Battle) {
+    async fn send_battle_state(&self, battle: &Battle) -> Result<(), SendError<sse::Event>> {
         if let Some(sender) = self.event_tx.lock().await.as_ref() {
-            if let Err(send_error) = sender
+            sender
                 .send(
-                    sse::Data::new_json(ExampleData {
-                        character_id: self.character_id.id,
-                        card_id: battle.characters[&self.character_id].hand[0].id,
+                    sse::Data::new_json(BattleState {
+                        battle,
+                        character_id: self.character_id,
                     })
                     .unwrap()
                     .event("battle_state")
                     .into(),
                 )
-                .await
-            {
-                println!("Send error: {}", send_error);
-            }
+                .await?;
         }
+        Ok(())
+    }
+}
+
+impl From<SendError<sse::Event>> for ActionError {
+    fn from(send_error: SendError<sse::Event>) -> Self {
+        Self::Failure(ActionFailure {
+            message: send_error.to_string(),
+        })
     }
 }

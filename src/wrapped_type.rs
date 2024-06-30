@@ -18,6 +18,15 @@ macro_rules! DeclareWrappedType {
             }
         }
 
+        impl serde::Serialize for $struct_name {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                serializer.serialize_newtype_struct(stringify!($struct_name), &self.$field_name)
+            }
+        }
+
         impl std::fmt::Display for $struct_name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.write_fmt(format_args!("{}", self.$field_name))
