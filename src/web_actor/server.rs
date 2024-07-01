@@ -29,6 +29,7 @@ impl<T: Sync + Send + 'static> Server<T> {
 where {
         let host = "0.0.0.0";
         let port = 8000;
+        const STATIC_HOSTING_DIR: &str = concat!(env!("OUT_DIR"), "/static");
 
         let server: actix_web::dev::Server = HttpServer::new(move || {
             App::new()
@@ -48,10 +49,7 @@ where {
                 .service(handle_act)
                 .service(handle_info)
                 .service(handle_sse)
-                .service(actix_files::Files::new(
-                    "/",
-                    concat!(env!("OUT_DIR"), "/static"),
-                ))
+                .service(actix_files::Files::new("/", STATIC_HOSTING_DIR))
         })
         .disable_signals()
         .bind((host, port))
@@ -59,6 +57,7 @@ where {
         .run();
         let server_handle = server.handle();
         println!("Started server on http://{}:{}/index.html", host, port);
+        println!("Serving static assets from {}", STATIC_HOSTING_DIR);
         let server_thread = thread::spawn(|| server_main::<T>(server));
 
         Ok(Self {
