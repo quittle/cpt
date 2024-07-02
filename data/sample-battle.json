@@ -44,7 +44,7 @@
         },
         {
             "id": 3,
-            "name": "Heal",
+            "name": "Rest",
             "description": "Recover 3 health",
             "flavor": "Ahh, that's nice",
             "actions": [
@@ -58,16 +58,16 @@
     ],
     "teams": [
         {
-            "name": "Team A",
+            "name": "Pirates",
             "members": [
                 {
-                    "name": "Member A1",
+                    "name": "Stumpy",
                     "race": "Human",
                     "base_health": 5,
                     "cards": [0, 2]
                 },
                 {
-                    "name": "Member A2",
+                    "name": "Captain Hook",
                     "race": "Human",
                     "base_health": 5,
                     "cards": [0, 1]
@@ -75,10 +75,10 @@
             ]
         },
         {
-            "name": "Team B",
+            "name": "Spanish Privateers",
             "members": [
                 {
-                    "name": "Member B1",
+                    "name": "Captain",
                     "is_player": true,
                     "race": "Human",
                     "base_health": 15,

@@ -33,13 +33,19 @@ export default function App() {
     return (
         <div style={{ display: "flex", maxWidth: "1500px" }}>
             <div style={{ flexGrow: 5 }}>
+                <Character character={battle.characters[characterId]} />
                 <h2>Characters</h2>
                 <div
                     style={{ display: "flex", justifyContent: "space-around" }}
                 >
-                    {Object.values(battle.characters).map((character) => (
-                        <Character key={character.id} character={character} />
-                    ))}
+                    {Object.values(battle.characters)
+                        .filter((character) => character.id !== characterId)
+                        .map((character) => (
+                            <Character
+                                key={character.id}
+                                character={character}
+                            />
+                        ))}
                 </div>
                 <ul
                     style={{
