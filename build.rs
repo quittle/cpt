@@ -7,8 +7,8 @@ fn main() {
     println!("cargo::rerun-if-changed=src/web_actor/static");
 
     assert!(Command::new("npm").args(["ci"]).status().unwrap().success());
-    assert!(Command::new("npx")
-        .args(["npm", "run", "build"])
+    assert!(Command::new("npm")
+        .args(["run", "build"])
         .status()
         .unwrap()
         .success());

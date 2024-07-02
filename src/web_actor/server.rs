@@ -5,6 +5,11 @@ use actix_web::{
 };
 use futures::executor::block_on;
 use std::{
+    io::Write,
+    process::Command,
+    sync::atomic::{AtomicBool, Ordering},
+};
+use std::{
     marker::PhantomData,
     sync::Arc,
     thread::{self, JoinHandle},
@@ -17,6 +22,11 @@ pub struct Server<T> {
     _phantom: PhantomData<T>,
     server_thread: Option<JoinHandle<std::io::Result<()>>>,
     server_handle: ServerHandle,
+
+    #[cfg(debug_assertions)]
+    asset_build_thread: Option<JoinHandle<()>>,
+    #[cfg(debug_assertions)]
+    asset_build_thread_terminate: Arc<AtomicBool>,
 }
 
 #[actix_web::main]
@@ -60,16 +70,48 @@ where {
         println!("Serving static assets from {}", STATIC_HOSTING_DIR);
         let server_thread = thread::spawn(|| server_main::<T>(server));
 
-        Ok(Self {
-            _phantom: PhantomData,
-            server_thread: Some(server_thread),
-            server_handle,
-        })
+        #[cfg(debug_assertions)]
+        {
+            let asset_build_thread_terminate: Arc<AtomicBool> = Default::default();
+            let thread_bool = asset_build_thread_terminate.clone();
+            Ok(Self {
+                _phantom: PhantomData,
+                server_thread: Some(server_thread),
+                server_handle,
+                asset_build_thread: Some(thread::spawn(move || {
+                    while !thread_bool.load(Ordering::Relaxed) {
+                        if let Ok(output) = Command::new("npm")
+                            .args(["run", "build"])
+                            .env("OUT_DIR", env!("OUT_DIR"))
+                            .output()
+                        {
+                            if !output.status.success() {
+                                println!("Asset build failed!");
+                                let _ = std::io::stderr().write_all(&output.stderr);
+                                let _ = std::io::stderr().write_all(&output.stdout);
+                            }
+                        }
+                    }
+                })),
+                asset_build_thread_terminate,
+            })
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            Ok(Self {
+                _phantom: PhantomData,
+                server_thread: Some(server_thread),
+                server_handle,
+            })
+        }
     }
 }
 
 impl<T> Drop for Server<T> {
     fn drop(&mut self) {
+        self.asset_build_thread_terminate
+            .store(true, Ordering::Relaxed);
+        self.asset_build_thread.take().unwrap().join().unwrap();
         block_on(self.server_handle.stop(true));
         self.server_thread
             .take()
