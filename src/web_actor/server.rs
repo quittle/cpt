@@ -81,7 +81,7 @@ where {
                 asset_build_thread: Some(thread::spawn(move || {
                     while !thread_bool.load(Ordering::Relaxed) {
                         if let Ok(output) = Command::new("npm")
-                            .args(["run", "build"])
+                            .args(["run", "build-server"])
                             .env("OUT_DIR", env!("OUT_DIR"))
                             .output()
                         {

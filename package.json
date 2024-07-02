@@ -3,7 +3,8 @@
     "version": "1.0.0",
     "main": "index.js",
     "scripts": {
-        "build": "NODE_ENV=development vite build --outDir $OUT_DIR/static ./src/web_actor/static"
+        "build": "NODE_ENV=development vite build --outDir $OUT_DIR/static ./src/web_actor/static",
+        "build-server": "NODE_ENV=development vite build --outDir $OUT_DIR/static --watch ./src/web_actor/static"
     },
     "devDependencies": {
         "@types/react": "^18.3.3",
