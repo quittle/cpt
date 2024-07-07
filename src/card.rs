@@ -10,6 +10,14 @@ pub type LifeNumber = battle_file::LifeNumber;
 pub enum Target {
     Me,
     Others,
+    Any,
+}
+
+impl Target {
+    /// Checks if `other` is compatible with `self`
+    pub fn is_super_set(&self, other: &Self) -> bool {
+        self == other || *self == Self::Any
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
@@ -37,15 +45,18 @@ pub struct Card {
 }
 
 impl Card {
+    /// If any action requires others, the target is Others
+    /// If any action supports any and no target is others, the target is Any
+    /// If neither are present, the target is Me
     pub fn target(&self) -> Target {
-        if self
-            .actions
-            .iter()
-            .any(|action| action.target() == &Target::Others)
-        {
-            Target::Others
-        } else {
-            Target::Me
+        let mut target = Target::Me;
+        for action in &self.actions {
+            match action.target() {
+                Target::Others => return Target::Others,
+                Target::Any => target = Target::Any,
+                Target::Me => (),
+            }
         }
+        target
     }
 }

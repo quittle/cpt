@@ -123,7 +123,13 @@ impl Actor for TerminalActor {
             Rc::new(ActionsMenu {
                 me: self.character_id,
                 cards: battle.get_character(self).hand.clone(),
-                targets: self.get_enemies(battle),
+                targets: battle
+                    .characters
+                    .iter()
+                    .filter_map(
+                        |(id, character)| if character.is_dead() { None } else { Some(*id) },
+                    )
+                    .collect(),
             }),
             Rc::new(PassMenuItem {}),
         ]);

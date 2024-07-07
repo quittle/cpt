@@ -83,6 +83,7 @@ impl Battle {
                     let map_target = |target: &battle_file::Target| match target {
                         battle_file::Target::Me => Target::Me,
                         battle_file::Target::Others => Target::Others,
+                        battle_file::Target::Any => Target::Any,
                     };
                     (
                         CardId::new(card.id),
@@ -231,8 +232,9 @@ impl Battle {
         cur_id
     }
 
-    fn handle_action(&mut self, action: Action, character_id: &CharacterId) {
-        let character = &self.characters[character_id];
+    /// Attempts to carry out the action. If illegal, returns false
+    fn handle_action(&mut self, actor: &CharacterId, action: Action) -> bool {
+        let character = &self.characters[actor];
         match action {
             Action::Pass => {
                 self.history.push(battle_markup![
@@ -242,6 +244,16 @@ impl Battle {
             }
             Action::Act(card_id, target_id) => {
                 let card = &self.cards[&card_id];
+                let actual_target = if *actor == target_id {
+                    Target::Me
+                } else {
+                    Target::Others
+                };
+
+                if !card.target().is_super_set(&actual_target) {
+                    return false;
+                }
+
                 let target_character = &self.characters[&target_id];
                 let mut history_entry = battle_markup![
                     @id(&character.name),
@@ -272,6 +284,7 @@ impl Battle {
                 self.history.push(history_entry);
             }
         }
+        true
     }
 
     pub async fn advance(&mut self) -> Result<(), ExitCode> {
@@ -289,15 +302,21 @@ impl Battle {
             if character.is_dead() {
                 continue;
             }
-            let actor: &dyn Actor = self.require_actor(&turn.character);
-            let action_result = actor.act(self).await;
-            match action_result {
-                Ok(request) => self.handle_action(request, &turn.character),
-                Err(ActionError::Failure(failure)) => {
-                    println!("Error processing {}: {}", turn.character, failure.message);
-                }
-                Err(ActionError::Exit(exit_code)) => {
-                    return Err(exit_code);
+            loop {
+                let actor: &dyn Actor = self.require_actor(&turn.character);
+                let action_result = actor.act(self).await;
+                match action_result {
+                    Ok(request) => {
+                        if self.handle_action(&turn.character, request) {
+                            break;
+                        }
+                    }
+                    Err(ActionError::Failure(failure)) => {
+                        println!("Error processing {}: {}", turn.character, failure.message);
+                    }
+                    Err(ActionError::Exit(exit_code)) => {
+                        return Err(exit_code);
+                    }
                 }
             }
             if self.check_only_one_team_alive().is_some() {

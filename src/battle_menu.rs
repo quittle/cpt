@@ -40,15 +40,27 @@ impl MenuItem<Battle, BattleMenuOutput> for ActionsMenu {
         "Cards".to_string()
     }
 
-    fn action(&self, _battle: &Battle) -> BattleMenuAction {
+    fn action(&self, battle: &Battle) -> BattleMenuAction {
         BattleMenuAction::MenuItem(
             self.cards
                 .iter()
                 .map(|card| -> Rc<dyn MenuItem<Battle, BattleMenuOutput>> {
+                    let card_target = battle.cards[card].target();
                     Rc::new(CardMenu {
                         me: self.me,
                         card: *card,
-                        targets: self.targets.clone(),
+                        targets: self
+                            .targets
+                            .iter()
+                            .filter(|target| {
+                                if target == &&self.me {
+                                    card_target.is_super_set(&Target::Me)
+                                } else {
+                                    card_target.is_super_set(&Target::Others)
+                                }
+                            })
+                            .copied()
+                            .collect(),
                     })
                 })
                 .collect(),
@@ -86,7 +98,7 @@ impl MenuItem<Battle, BattleMenuOutput> for CardMenu {
                 target: self.me,
                 card: self.card,
             }),
-            Target::Others => MenuAction::MenuItem(
+            Target::Any | Target::Others => MenuAction::MenuItem(
                 self.targets
                     .iter()
                     .map(|target| -> Rc<dyn MenuItem<Battle, BattleMenuOutput>> {

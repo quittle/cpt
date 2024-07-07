@@ -68,6 +68,8 @@ pub enum Target {
     Me,
     #[serde(alias = "other")]
     Others,
+    #[serde(alias = "any")]
+    Any,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]

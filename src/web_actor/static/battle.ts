@@ -31,7 +31,7 @@ export type TypedText =
 
 export type BattleHistoryEntry = TypedText[];
 
-export type ActionTarget = "Me" | "Others";
+export type ActionTarget = "Me" | "Others" | "Any";
 
 export type CardAction =
     | {
