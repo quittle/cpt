@@ -62,7 +62,7 @@ pub enum Race {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub enum Target {
     #[serde(alias = "self")]
     Me,
@@ -73,10 +73,11 @@ pub enum Target {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum CardAction {
     Damage { target: Target, amount: LifeNumber },
     Heal { target: Target, amount: LifeNumber },
+    GainAction { target: Target, amount: u8 },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

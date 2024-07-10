@@ -39,6 +39,7 @@ pub struct Character {
     pub hand: Vec<CardId>,
     pub deck: Vec<CardId>,
     pub health: Health,
+    pub remaining_actions: u8,
     pub hand_size: HandSize,
 }
 
@@ -54,6 +55,10 @@ impl Character {
             .iter()
             .map(|v| **v)
             .collect();
+    }
+
+    pub fn get_default_turn_actions(&self) -> Option<u8> {
+        None
     }
 }
 

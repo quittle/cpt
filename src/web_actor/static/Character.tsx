@@ -62,6 +62,11 @@ export default function Character(props: {
             }}
         >
             <h3>{character.name}</h3>
+            {isPlayer
+                ? `Remaining actions: ${"🔵".repeat(
+                      character.remaining_actions
+                  )}`
+                : null}
             <div>
                 Health: <b>{character.health}</b>
             </div>

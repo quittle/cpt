@@ -24,6 +24,7 @@ impl Target {
 pub enum CardAction {
     Damage { target: Target, amount: LifeNumber },
     Heal { target: Target, amount: LifeNumber },
+    GainAction { target: Target, amount: u8 },
 }
 
 impl CardAction {
@@ -31,6 +32,7 @@ impl CardAction {
         match self {
             Self::Damage { target, .. } => target,
             Self::Heal { target, .. } => target,
+            Self::GainAction { target, .. } => target,
         }
     }
 }

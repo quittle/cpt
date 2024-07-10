@@ -54,6 +54,24 @@
                     "amount": 3
                 }
             ]
+        },
+        {
+            "id": 4,
+            "name": "Reloadable Slingshot",
+            "description": "Deal 1 damage then take another action",
+            "flavor": "Get back at 'em",
+            "actions": [
+                {
+                    "type": "damage",
+                    "target": "other",
+                    "amount": 1
+                },
+                {
+                    "type": "gain_action",
+                    "target": "self",
+                    "amount": 1
+                }
+            ]
         }
     ],
     "teams": [
@@ -83,7 +101,7 @@
                     "race": "Human",
                     "base_health": 15,
                     "hand_size": 2,
-                    "cards": [0, 1, 2, 3]
+                    "cards": [0, 1, 2, 3, 4]
                 }
             ]
         }

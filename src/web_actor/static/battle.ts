@@ -13,6 +13,7 @@ export interface Character {
     deck: CardId[];
     health: number;
     hand_size: number;
+    remaining_actions: number;
 }
 
 export interface Team {

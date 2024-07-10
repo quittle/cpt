@@ -31,6 +31,7 @@ pub struct Battle {
     pub random_provider: Box<dyn RandomProvider>,
     pub round: u16,
     pub cards: HashMap<CardId, Card>,
+    pub default_turn_actions: u8,
 }
 
 unsafe impl Sync for Battle {}
@@ -50,6 +51,7 @@ impl Battle {
         Ok(Battle {
             history: vec![],
             random_provider,
+            default_turn_actions: 1,
             characters: battle
                 .teams
                 .iter()
@@ -65,6 +67,7 @@ impl Battle {
                                 battle_file::Race::Human => CharacterRace::Human,
                             },
                             hand: vec![],
+                            remaining_actions: 0,
                             deck: member
                                 .cards
                                 .iter()
@@ -104,6 +107,12 @@ impl Battle {
                                     }
                                     battle_file::CardAction::Heal { target, amount } => {
                                         CardAction::Heal {
+                                            target: map_target(target),
+                                            amount: *amount,
+                                        }
+                                    }
+                                    battle_file::CardAction::GainAction { target, amount } => {
+                                        CardAction::GainAction {
                                             target: map_target(target),
                                             amount: *amount,
                                         }
@@ -265,23 +274,39 @@ impl Battle {
                 ];
 
                 for action in &card.actions {
+                    // If the action specifically targets me, then force it to target the actor
+                    // rather than the potentially other target.
+                    let target_id = if action.target() == &Target::Me {
+                        actor
+                    } else {
+                        &target_id
+                    };
+
+                    let target_character = self.characters.get_mut(target_id).unwrap();
                     match action {
                         CardAction::Damage { amount, .. } => {
                             history_entry.extend(battle_markup![@damage(amount), " damage"]);
 
-                            self.characters.get_mut(&target_id).unwrap().health -=
-                                Attack::new(*amount);
+                            target_character.health -= Attack::new(*amount);
                         }
                         CardAction::Heal { amount, .. } => {
                             history_entry.extend(battle_markup!["Healed ", @damage(amount)]);
 
-                            self.characters.get_mut(&target_id).unwrap().health +=
-                                Health::new(*amount);
+                            target_character.health += Health::new(*amount);
+                        }
+                        CardAction::GainAction { amount, .. } => {
+                            history_entry
+                                .extend(battle_markup![format!("Gained {} action", amount)]);
+                            target_character.remaining_actions += *amount;
                         }
                     }
                 }
 
                 self.history.push(history_entry);
+
+                // Remove card from hand
+                let hand = &mut self.characters.get_mut(actor).unwrap().hand;
+                hand.remove(hand.iter().position(|id| id == &card_id).unwrap());
             }
         }
         true
@@ -293,22 +318,26 @@ impl Battle {
             .push(battle_markup![format!("--- Round {}", self.round)]);
         let turns = self.build_turns();
         for turn in turns {
-            self.characters
-                .get_mut(&turn.character)
-                .unwrap()
-                .reset_hand(self.random_provider.as_ref());
+            let character = self.characters.get_mut(&turn.character).unwrap();
+            character.reset_hand(self.random_provider.as_ref());
+            character.remaining_actions = character
+                .get_default_turn_actions()
+                .unwrap_or(self.default_turn_actions);
 
-            let character = &self.characters[&turn.character];
             if character.is_dead() {
                 continue;
             }
-            loop {
+
+            while self.characters[&turn.character].remaining_actions > 0 {
                 let actor: &dyn Actor = self.require_actor(&turn.character);
                 let action_result = actor.act(self).await;
                 match action_result {
                     Ok(request) => {
                         if self.handle_action(&turn.character, request) {
-                            break;
+                            self.characters
+                                .get_mut(&turn.character)
+                                .unwrap()
+                                .remaining_actions -= 1;
                         }
                     }
                     Err(ActionError::Failure(failure)) => {
