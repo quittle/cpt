@@ -1,34 +1,69 @@
 import React from "react";
-import { Character } from "./battle";
+import { ActionTarget, Battle, CardId, Character, CharacterId } from "./battle";
+import { getCardTarget } from "./utils";
 
-export default function Character(props: { character: Character }) {
+function isCardEligible(
+    isPlayer: boolean,
+    cardId: CardId,
+    battle: Battle
+): boolean {
+    const card = battle.cards[cardId];
+    const target = getCardTarget(card);
+    switch (target) {
+        case ActionTarget.Me:
+            return isPlayer;
+        case ActionTarget.Others:
+            return !isPlayer;
+        case ActionTarget.Any:
+            return true;
+    }
+}
+
+export default function Character(props: {
+    isPlayer: boolean;
+    characterId: CharacterId;
+    draggedCard: CardId | undefined;
+    battle: Battle;
+}) {
+    const { isPlayer, characterId, draggedCard, battle } = props;
+    const character = battle.characters[characterId];
+
+    // Only ineligible if there is actively a card being dragged and that card isn't eligible.
+    const isIneligible =
+        draggedCard !== undefined &&
+        !isCardEligible(isPlayer, draggedCard, battle);
+
     return (
         <div
-            style={{ background: "#ededed", padding: "1em" }}
+            style={{
+                background: "#ededed",
+                padding: "1em",
+                opacity: isIneligible ? 0.5 : 1,
+            }}
             onDragOver={(e) => {
+                if (draggedCard === undefined) {
+                    return;
+                }
+
                 e.preventDefault();
+                e.dataTransfer.dropEffect = isIneligible ? "none" : "move";
             }}
             onDrop={async (e) => {
-                const cardId = parseInt(
-                    e.dataTransfer.getData("text/plain"),
-                    10
-                );
-
                 await fetch("/act", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        card_id: cardId,
-                        target_id: props.character.id,
+                        card_id: draggedCard,
+                        target_id: characterId,
                     }),
                 });
             }}
         >
-            <h3>{props.character.name}</h3>
+            <h3>{character.name}</h3>
             <div>
-                Health: <b>{props.character.health}</b>
+                Health: <b>{character.health}</b>
             </div>
         </div>
     );

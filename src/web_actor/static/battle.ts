@@ -3,9 +3,10 @@ export enum CharacterRace {
 }
 
 export type CardId = number;
+export type CharacterId = number;
 
 export interface Character {
-    id: number;
+    id: CharacterId;
     name: string;
     race: CharacterRace;
     hand: CardId[];
@@ -31,7 +32,11 @@ export type TypedText =
 
 export type BattleHistoryEntry = TypedText[];
 
-export type ActionTarget = "Me" | "Others" | "Any";
+export enum ActionTarget {
+    Me = "Me",
+    Others = "Others",
+    Any = "Any",
+}
 
 export type CardAction =
     | {

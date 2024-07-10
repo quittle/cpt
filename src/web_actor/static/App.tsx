@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Battle, BattleState } from "./battle";
+import { Battle, BattleState, CardId } from "./battle";
 import * as messages from "./messages.js";
 import Card from "./Card.js";
 import Character from "./Character.js";
@@ -9,6 +9,7 @@ messages.init(async () => {});
 
 export default function App() {
     const [battleState, setBattleState] = useState<BattleState>();
+    const [dragState, setDragState] = useState<CardId>();
 
     useEffect(() => {
         // Throwaway
@@ -33,7 +34,12 @@ export default function App() {
     return (
         <div style={{ display: "flex", maxWidth: "1500px" }}>
             <div style={{ flexGrow: 5 }}>
-                <Character character={battle.characters[characterId]} />
+                <Character
+                    isPlayer={true}
+                    characterId={characterId}
+                    draggedCard={dragState}
+                    battle={battle}
+                />
                 <h2>Characters</h2>
                 <div
                     style={{ display: "flex", justifyContent: "space-around" }}
@@ -42,8 +48,11 @@ export default function App() {
                         .filter((character) => character.id !== characterId)
                         .map((character) => (
                             <Character
+                                isPlayer={false}
                                 key={character.id}
-                                character={character}
+                                characterId={character.id}
+                                draggedCard={dragState}
+                                battle={battle}
                             />
                         ))}
                 </div>
@@ -59,7 +68,11 @@ export default function App() {
                         const card = battle.cards[cardId];
                         return (
                             <li key={cardId}>
-                                <Card card={card} />
+                                <Card
+                                    card={card}
+                                    onDragStart={() => setDragState(cardId)}
+                                    onDragEnd={() => setDragState(undefined)}
+                                />
                             </li>
                         );
                     })}

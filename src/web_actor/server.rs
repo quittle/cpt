@@ -5,14 +5,13 @@ use actix_web::{
 };
 use futures::executor::block_on;
 use std::{
-    io::Write,
-    process::Command,
-    sync::atomic::{AtomicBool, Ordering},
-};
-use std::{
     marker::PhantomData,
     sync::Arc,
     thread::{self, JoinHandle},
+};
+use std::{
+    process::Command,
+    sync::atomic::{AtomicBool, Ordering},
 };
 use tokio::sync::Mutex;
 
@@ -47,7 +46,8 @@ where {
                 .wrap(
                     ErrorHandlers::new().default_handler(|service_response: ServiceResponse| {
                         println!(
-                            "{}: {:?}",
+                            "{} {}: {:?}",
+                            service_response.request().path(),
                             service_response.status(),
                             service_response.response().body()
                         );
@@ -80,15 +80,13 @@ where {
                 server_handle,
                 asset_build_thread: Some(thread::spawn(move || {
                     while !thread_bool.load(Ordering::Relaxed) {
-                        if let Ok(output) = Command::new("npm")
+                        if let Ok(status) = Command::new("npm")
                             .args(["run", "build-server"])
                             .env("OUT_DIR", env!("OUT_DIR"))
-                            .output()
+                            .status()
                         {
-                            if !output.status.success() {
+                            if !status.success() {
                                 println!("Asset build failed!");
-                                let _ = std::io::stderr().write_all(&output.stderr);
-                                let _ = std::io::stderr().write_all(&output.stdout);
                             }
                         }
                     }

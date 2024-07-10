@@ -1,13 +1,19 @@
 import React from "react";
 import { Card } from "./battle";
 
-export default function Card(props: { card: Card }) {
+export default function Card(props: {
+    card: Card;
+    onDragStart: () => void;
+    onDragEnd: () => void;
+}) {
     return (
         <button
             draggable={true}
             onDragStart={(e) => {
                 e.dataTransfer.setData("text/plain", String(props.card.id));
+                props.onDragStart();
             }}
+            onDragEnd={(e) => props.onDragEnd()}
             style={{
                 padding: 0,
                 borderWidth: "0.3em",
