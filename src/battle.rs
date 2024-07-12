@@ -285,18 +285,18 @@ impl Battle {
                     let target_character = self.characters.get_mut(target_id).unwrap();
                     match action {
                         CardAction::Damage { amount, .. } => {
-                            history_entry.extend(battle_markup![@damage(amount), " damage"]);
+                            history_entry.extend(battle_markup![@damage(amount), " damage. "]);
 
                             target_character.health -= Attack::new(*amount);
                         }
                         CardAction::Heal { amount, .. } => {
-                            history_entry.extend(battle_markup!["Healed ", @damage(amount)]);
+                            history_entry.extend(battle_markup!["Healed ", @damage(amount), ". "]);
 
                             target_character.health += Health::new(*amount);
                         }
                         CardAction::GainAction { amount, .. } => {
                             history_entry
-                                .extend(battle_markup![format!("Gained {} action", amount)]);
+                                .extend(battle_markup![format!("Gained {} action. ", amount)]);
                             target_character.remaining_actions += *amount;
                         }
                     }
