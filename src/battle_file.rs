@@ -73,11 +73,27 @@ pub enum Target {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[serde(untagged)]
+pub enum MaybeLifeNumberRange {
+    Range(LifeNumber, LifeNumber),
+    Absolute(LifeNumber),
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum CardAction {
-    Damage { target: Target, amount: LifeNumber },
-    Heal { target: Target, amount: LifeNumber },
-    GainAction { target: Target, amount: u8 },
+    Damage {
+        target: Target,
+        amount: MaybeLifeNumberRange,
+    },
+    Heal {
+        target: Target,
+        amount: MaybeLifeNumberRange,
+    },
+    GainAction {
+        target: Target,
+        amount: u8,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -136,7 +152,7 @@ mod tests {
             battle.cards[battle.teams[0].members[0].cards[0]].actions[0],
             CardAction::Damage {
                 target: Target::Others,
-                amount: 123
+                amount: MaybeLifeNumberRange::Absolute(123),
             }
         );
 

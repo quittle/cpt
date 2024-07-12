@@ -6,13 +6,13 @@
         {
             "id": 0,
             "name": "Kick",
-            "description": "Deal 1 damage",
+            "description": "Deal 0 or 1 damage",
             "flavor": "Break a leg",
             "actions": [
                 {
                     "type": "damage",
                     "target": "other",
-                    "amount": 1
+                    "amount": [0, 1]
                 }
             ]
         },

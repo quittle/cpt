@@ -1,10 +1,19 @@
 use serde::Serialize;
 
-use crate::{battle_file, DeclareWrappedType};
+use crate::{battle_file, DeclareWrappedType, RandomProvider};
 
 DeclareWrappedType!(CardId, id, battle_file::CardId);
 
 pub type LifeNumber = battle_file::LifeNumber;
+
+#[derive(Debug, PartialEq, Clone, Serialize)]
+pub struct LifeNumberRange(pub LifeNumber, pub LifeNumber);
+
+impl LifeNumberRange {
+    pub fn resolve(&self, random_provider: &Box<dyn RandomProvider>) -> LifeNumber {
+        random_provider.pick_linear_i64(self.0, self.1)
+    }
+}
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum Target {
@@ -22,9 +31,18 @@ impl Target {
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum CardAction {
-    Damage { target: Target, amount: LifeNumber },
-    Heal { target: Target, amount: LifeNumber },
-    GainAction { target: Target, amount: u8 },
+    Damage {
+        target: Target,
+        amount: LifeNumberRange,
+    },
+    Heal {
+        target: Target,
+        amount: LifeNumberRange,
+    },
+    GainAction {
+        target: Target,
+        amount: u8,
+    },
 }
 
 impl CardAction {

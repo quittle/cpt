@@ -34,6 +34,15 @@ pub struct Battle {
     pub default_turn_actions: u8,
 }
 
+fn normalize_maybe_life_number_range(
+    life_number_range: &battle_file::MaybeLifeNumberRange,
+) -> LifeNumberRange {
+    match *life_number_range {
+        battle_file::MaybeLifeNumberRange::Absolute(value) => LifeNumberRange(value, value),
+        battle_file::MaybeLifeNumberRange::Range(low, high) => LifeNumberRange(low, high),
+    }
+}
+
 unsafe impl Sync for Battle {}
 
 impl Battle {
@@ -102,13 +111,13 @@ impl Battle {
                                     battle_file::CardAction::Damage { target, amount } => {
                                         CardAction::Damage {
                                             target: map_target(target),
-                                            amount: *amount,
+                                            amount: normalize_maybe_life_number_range(amount),
                                         }
                                     }
                                     battle_file::CardAction::Heal { target, amount } => {
                                         CardAction::Heal {
                                             target: map_target(target),
-                                            amount: *amount,
+                                            amount: normalize_maybe_life_number_range(amount),
                                         }
                                     }
                                     battle_file::CardAction::GainAction { target, amount } => {
@@ -285,14 +294,16 @@ impl Battle {
                     let target_character = self.characters.get_mut(target_id).unwrap();
                     match action {
                         CardAction::Damage { amount, .. } => {
-                            history_entry.extend(battle_markup![@damage(amount), " damage. "]);
+                            let value = amount.resolve(&self.random_provider);
+                            history_entry.extend(battle_markup![@damage(&value), " damage. "]);
 
-                            target_character.health -= Attack::new(*amount);
+                            target_character.health -= Attack::new(value);
                         }
                         CardAction::Heal { amount, .. } => {
-                            history_entry.extend(battle_markup!["Healed ", @damage(amount), ". "]);
+                            let value = amount.resolve(&self.random_provider);
+                            history_entry.extend(battle_markup!["Healed ", @damage(&value), ". "]);
 
-                            target_character.health += Health::new(*amount);
+                            target_character.health += Health::new(value);
                         }
                         CardAction::GainAction { amount, .. } => {
                             history_entry
