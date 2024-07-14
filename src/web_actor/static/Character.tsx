@@ -1,6 +1,7 @@
 import React from "react";
 import { ActionTarget, Battle, CardId, Character, CharacterId } from "./battle";
 import { getCardTarget } from "./utils";
+import { takeAction } from "./state";
 
 function isCardEligible(
     isPlayer: boolean,
@@ -48,17 +49,12 @@ export default function Character(props: {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = isIneligible ? "none" : "move";
             }}
-            onDrop={async (e) => {
-                await fetch("/act", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        card_id: draggedCard,
-                        target_id: characterId,
-                    }),
-                });
+            onDrop={async (_e) => {
+                if (draggedCard === undefined) {
+                    return;
+                }
+
+                await takeAction(draggedCard, characterId);
             }}
         >
             <h3>{character.name}</h3>

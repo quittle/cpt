@@ -83,5 +83,9 @@ impl Actor for WebActor {
         }
     }
 
-    async fn on_game_over(&self, _battle: &Battle) {}
+    async fn on_game_over(&self, battle: &Battle) {
+        self.send_battle_state(battle)
+            .await
+            .expect("Failed to send game over state");
+    }
 }

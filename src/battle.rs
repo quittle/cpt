@@ -294,13 +294,13 @@ impl Battle {
                     let target_character = self.characters.get_mut(target_id).unwrap();
                     match action {
                         CardAction::Damage { amount, .. } => {
-                            let value = amount.resolve(&self.random_provider);
+                            let value = amount.resolve(self.random_provider.as_ref());
                             history_entry.extend(battle_markup![@damage(&value), " damage. "]);
 
                             target_character.health -= Attack::new(value);
                         }
                         CardAction::Heal { amount, .. } => {
-                            let value = amount.resolve(&self.random_provider);
+                            let value = amount.resolve(self.random_provider.as_ref());
                             history_entry.extend(battle_markup!["Healed ", @damage(&value), ". "]);
 
                             target_character.health += Health::new(value);

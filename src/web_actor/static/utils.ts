@@ -1,4 +1,11 @@
-import { ActionTarget, Card, CardAction } from "./battle";
+import {
+    ActionTarget,
+    Battle,
+    Card,
+    CardAction,
+    Character,
+    CharacterId,
+} from "./battle";
 
 export function getActionTarget(action: CardAction): ActionTarget {
     return action["Damage"]?.target ?? action["Heal"]?.target;
@@ -22,4 +29,19 @@ export function getCardTarget(card: Card): ActionTarget {
     }
 
     return defaultTarget;
+}
+
+export function getLivingCharacters(battle: Battle): Character[] {
+    return Object.values(battle.characters).filter(
+        (character) => character.health > 0
+    );
+}
+
+export function getLivingEnemies(
+    battle: Battle,
+    player: CharacterId
+): Character[] {
+    return getLivingCharacters(battle).filter(
+        (character) => character.id != player
+    );
 }

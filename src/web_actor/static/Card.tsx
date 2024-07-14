@@ -5,6 +5,8 @@ export default function Card(props: {
     card: Card;
     onDragStart: () => void;
     onDragEnd: () => void;
+    onClick: () => void;
+    hasDefaultAction: boolean;
 }) {
     return (
         <button
@@ -13,11 +15,13 @@ export default function Card(props: {
                 e.dataTransfer.setData("text/plain", String(props.card.id));
                 props.onDragStart();
             }}
-            onDragEnd={(e) => props.onDragEnd()}
+            onClick={props.onClick}
+            onDragEnd={props.onDragEnd}
             style={{
                 padding: 0,
                 borderWidth: "0.3em",
                 width: "15em",
+                cursor: props.hasDefaultAction ? "pointer" : "grab",
             }}
         >
             <b
