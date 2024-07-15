@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! DeclareWrappedType {
     ($struct_name:ident, $field_name:ident, $field_type:ty) => {
-        #[derive(PartialEq, Copy, Clone, Eq, Hash, Debug)]
+        #[derive(PartialEq, Copy, Clone, Eq, Hash, Debug, PartialOrd, Ord)]
         pub struct $struct_name {
             pub $field_name: $field_type,
         }
@@ -42,6 +42,16 @@ macro_rules! DeclareWrappedType {
         impl std::ops::AddAssign for $struct_name {
             fn add_assign(&mut self, rhs: Self) {
                 *self = Self {
+                    $field_name: self.$field_name + rhs.$field_name,
+                }
+            }
+        }
+
+        impl std::ops::Add for $struct_name {
+            type Output = $struct_name;
+
+            fn add(self, rhs: Self) -> $struct_name {
+                Self {
                     $field_name: self.$field_name + rhs.$field_name,
                 }
             }

@@ -1,4 +1,7 @@
-use std::ops::{Sub, SubAssign};
+use std::{
+    cmp::min,
+    ops::{Sub, SubAssign},
+};
 
 use serde::Serialize;
 
@@ -13,21 +16,21 @@ pub enum CharacterRace {
     Human,
 }
 
-DeclareWrappedType!(Attack, damage, i64);
+DeclareWrappedType!(Attack, damage, u64);
 
-DeclareWrappedType!(Health, health, i64);
+DeclareWrappedType!(Health, health, u64);
 
 impl Sub<Attack> for Health {
     type Output = Self;
 
     fn sub(self, attack: Attack) -> Self {
-        Health::new(self.health - attack.damage)
+        Health::new(self.health.saturating_sub(attack.damage))
     }
 }
 
 impl SubAssign<Attack> for Health {
     fn sub_assign(&mut self, attack: Attack) {
-        self.health -= attack.damage
+        self.health = (*self - attack).health;
     }
 }
 
@@ -39,13 +42,14 @@ pub struct Character {
     pub hand: Vec<CardId>,
     pub deck: Vec<CardId>,
     pub health: Health,
+    pub max_health: Health,
     pub remaining_actions: u8,
     pub hand_size: HandSize,
 }
 
 impl Character {
     pub fn is_dead(&self) -> bool {
-        self.health.health <= 0
+        self.health.health == 0
     }
 
     pub fn reset_hand(&mut self, random_provider: &dyn RandomProvider) {
@@ -59,6 +63,10 @@ impl Character {
 
     pub fn get_default_turn_actions(&self) -> Option<u8> {
         None
+    }
+
+    pub fn heal(&mut self, healing: Health) {
+        self.health = min(self.health + healing, self.max_health);
     }
 }
 

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-pub type LifeNumber = i64;
+pub type LifeNumber = u64;
 pub type CardId = usize;
 pub type HandSize = u8;
 
@@ -50,6 +50,7 @@ pub struct TeamMember {
     pub name: String,
     pub race: Race,
     pub base_health: LifeNumber,
+    pub max_health: Option<LifeNumber>,
     pub cards: Vec<CardId>,
     pub hand_size: Option<HandSize>,
     #[serde(default)]

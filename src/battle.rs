@@ -83,6 +83,9 @@ impl Battle {
                                 .map(|card_id| CardId::new(*card_id))
                                 .collect(),
                             health: Health::new(member.base_health),
+                            max_health: Health::new(
+                                member.max_health.unwrap_or(member.base_health),
+                            ),
                             hand_size: member.hand_size.unwrap_or(battle.default_hand_size),
                         },
                     )
@@ -303,7 +306,7 @@ impl Battle {
                             let value = amount.resolve(self.random_provider.as_ref());
                             history_entry.extend(battle_markup!["Healed ", @damage(&value), ". "]);
 
-                            target_character.health += Health::new(value);
+                            target_character.heal(Health::new(value));
                         }
                         CardAction::GainAction { amount, .. } => {
                             history_entry

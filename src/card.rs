@@ -11,7 +11,7 @@ pub struct LifeNumberRange(pub LifeNumber, pub LifeNumber);
 
 impl LifeNumberRange {
     pub fn resolve(&self, random_provider: &dyn RandomProvider) -> LifeNumber {
-        random_provider.pick_linear_i64(self.0, self.1)
+        random_provider.pick_linear_u64(self.0, self.1)
     }
 }
 
