@@ -29,6 +29,8 @@ impl BattleTextEntry {
 macro_rules! battle_markup {
     ( $($tokens:tt)*  ) => {
         {
+            use $crate::BattleTextEntry;
+            use $crate::markup;
             markup!(BattleTextEntry: [$($tokens)*])
         }
     }

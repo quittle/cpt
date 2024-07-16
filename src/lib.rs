@@ -1,6 +1,7 @@
 pub mod action;
 pub mod actor;
 pub mod battle;
+mod battle_deserialize;
 pub mod battle_file;
 pub mod battle_history;
 pub mod battle_menu;
