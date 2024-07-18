@@ -135,6 +135,10 @@ impl Battle {
                 }
 
                 let target_character = &self.characters[&target_id];
+                if target_character.is_dead() {
+                    return false;
+                }
+
                 let mut history_entry = battle_markup![
                     @id(&character.name),
                     " used ",

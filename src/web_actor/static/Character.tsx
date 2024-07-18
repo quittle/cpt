@@ -32,7 +32,8 @@ export default function Character(props: {
     // Only ineligible if there is actively a card being dragged and that card isn't eligible.
     const isIneligible =
         draggedCard !== undefined &&
-        !isCardEligible(isPlayer, draggedCard, battle);
+        (character.health == 0 ||
+            !isCardEligible(isPlayer, draggedCard, battle));
 
     return (
         <div
