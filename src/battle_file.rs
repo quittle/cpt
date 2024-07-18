@@ -8,6 +8,7 @@ pub type HandSize = u8;
 pub struct Battle {
     pub title: String,
     pub description: String,
+    pub introduction: Option<StoryCard>,
     pub default_hand_size: HandSize,
     pub cards: Vec<Card>,
     pub teams: Vec<Team>,
@@ -37,6 +38,15 @@ impl Battle {
 
         Ok(battle)
     }
+}
+
+pub type StoryCard = Vec<StoryCardEntry>;
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum StoryCardEntry {
+    H1(String),
+    P(String),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -118,6 +128,10 @@ mod tests {
             "title": "Example Game",
             "description": "Example Description",
             "default_hand_size": 5,
+            "introduction": [
+                { "h1": "Heading" },
+                { "p": "Paragraph" }
+            ],
             "cards": [
                 {
                     "id": 0,

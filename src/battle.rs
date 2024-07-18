@@ -1,12 +1,10 @@
+use crate::{
+    battle_file, battle_markup, Action, ActionError, Actor, Attack, BattleText, Card, CardAction,
+    CardId, Character, CharacterId, DeclareWrappedType, Health, RandomProvider, Target,
+};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::process::ExitCode;
-
-use serde::Serialize;
-
-use crate::{
-    battle_markup, Action, ActionError, Actor, Attack, BattleText, Card, CardAction, CardId,
-    Character, CharacterId, DeclareWrappedType, Health, RandomProvider, Target,
-};
 
 DeclareWrappedType!(TeamId, id, u64);
 
@@ -21,11 +19,14 @@ struct Turn {
     character: CharacterId,
 }
 
+type StoryCard = battle_file::StoryCard;
+
 #[derive(Serialize)]
 pub struct Battle {
     #[serde(skip_serializing)]
     pub actors: Vec<(TeamId, Box<dyn Actor>)>,
     pub characters: HashMap<CharacterId, Character>,
+    pub introduction: Option<StoryCard>,
     pub teams: Vec<Team>,
     pub history: Vec<BattleText>,
     #[serde(skip_serializing)]

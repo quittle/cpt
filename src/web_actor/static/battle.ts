@@ -61,9 +61,14 @@ export interface Card {
     actions: CardAction[];
 }
 
+export type StoryCardEntry = { h1: string } | { p: string };
+
+export type StoryCard = StoryCardEntry[];
+
 export interface Battle {
     characters: Record<string, Character>;
     teams: Team[];
+    introduction?: StoryCard;
     history: BattleHistoryEntry[];
     round: number;
     cards: Record<string, Card>;

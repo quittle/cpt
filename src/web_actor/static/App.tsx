@@ -4,18 +4,16 @@ import * as messages from "./messages.js";
 import Card from "./Card.js";
 import Character from "./Character.js";
 import BattleHistory from "./BattleHistory.js";
-import {
-    getCardTarget,
-    getLivingCharacters,
-    getLivingEnemies,
-} from "./utils.js";
+import { getCardTarget, getLivingEnemies } from "./utils.js";
 import { takeAction } from "./state.js";
+import { StoryCard } from "./StoryCard.js";
 
 messages.init(async () => {});
 
 export default function App() {
     const [battleState, setBattleState] = useState<BattleState>();
     const [dragState, setDragState] = useState<CardId>();
+    const [showIntroState, setShowIntroState] = useState<boolean>(false);
 
     useEffect(() => {
         // Throwaway
@@ -31,6 +29,15 @@ export default function App() {
         };
     }, [setBattleState]);
 
+    useEffect(() => {
+        const round = battleState?.battle.round;
+        if (round === undefined) {
+            setShowIntroState(false);
+        } else {
+            setShowIntroState(round <= 1);
+        }
+    }, [battleState?.battle.round]);
+
     if (!battleState) {
         return <div>Loading...</div>;
     }
@@ -39,6 +46,15 @@ export default function App() {
 
     return (
         <div style={{ display: "flex", maxWidth: "1500px" }}>
+            {battleState.battle.introduction ? (
+                <StoryCard
+                    storyCard={battleState.battle.introduction}
+                    show={showIntroState}
+                    onClose={() => setShowIntroState(false)}
+                />
+            ) : (
+                <></>
+            )}
             <div style={{ flexGrow: 5 }}>
                 <Character
                     isPlayer={true}

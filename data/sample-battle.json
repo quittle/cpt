@@ -2,6 +2,15 @@
     "title": "Example Game",
     "description": "Example Description",
     "default_hand_size": 5,
+    "introduction": [
+        { "h1": "Spanish Armada" },
+        {
+            "p": "Sailing under the flag of the Spanish crown, you fight for the glory of your homeland. Be it pirates or foreign powers, nothing will stop you on adventure."
+        },
+        {
+            "p": "Ahh, look at this. A ship boldly flying the jolly roger appears on the horizon. This should be fun."
+        }
+    ],
     "cards": [
         {
             "id": 0,

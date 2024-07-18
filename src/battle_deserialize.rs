@@ -28,6 +28,7 @@ impl Battle {
             .unwrap_or(0);
         Ok(Battle {
             history: vec![],
+            introduction: battle.introduction,
             random_provider,
             default_turn_actions: 1,
             characters: battle
