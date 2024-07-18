@@ -3,6 +3,8 @@
 set -eu
 set -o pipefail
 
+npm run lint
+
 export RUSTFLAGS="-Dwarnings"
 cargo fmt --all
 cargo build --all

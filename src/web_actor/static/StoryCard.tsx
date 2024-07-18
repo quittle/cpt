@@ -27,7 +27,7 @@ export function StoryCard(props: {
     }, [props.show, buttonRef]);
 
     return (
-        <dialog onLoad={(e) => e.currentTarget.showModal()} ref={buttonRef}>
+        <dialog ref={buttonRef}>
             <button onClick={props.onClose}>X</button>
             {props.storyCard.map((entry, index) => (
                 <StoryCardEntry key={index} entry={entry} />

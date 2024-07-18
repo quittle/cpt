@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActionTarget, Battle, BattleState, CardId } from "./battle";
+import { ActionTarget,  BattleState, CardId } from "./battle";
 import * as messages from "./messages.js";
 import Card from "./Card.js";
 import Character from "./Character.js";
