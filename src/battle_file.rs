@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use serde::{Deserialize, Serialize};
 
 pub type LifeNumber = u64;
@@ -14,15 +12,11 @@ pub struct Battle {
     pub default_hand_size: HandSize,
     pub cards: Vec<Card>,
     pub teams: Vec<Team>,
-    #[serde(skip)]
-    pub asset_directory: PathBuf,
 }
 
 impl Battle {
-    pub fn parse_from_str(data: &str, asset_directory: Option<PathBuf>) -> Result<Self, String> {
-        let mut battle: Battle =
-            serde_json::from_str::<Battle>(data).map_err(|err| err.to_string())?;
-        battle.asset_directory = asset_directory.unwrap_or_default();
+    pub fn parse_from_str(data: &str) -> Result<Self, String> {
+        let battle: Battle = serde_json::from_str::<Battle>(data).map_err(|err| err.to_string())?;
 
         for (index, card) in battle.cards.iter().enumerate() {
             if card.id != index {
@@ -169,7 +163,7 @@ mod tests {
             ]
         }"#;
 
-        let battle: Battle = Battle::parse_from_str(data, None)?;
+        let battle: Battle = Battle::parse_from_str(data)?;
         assert_eq!(
             battle.cards[battle.teams[0].members[0].cards[0]].actions[0],
             CardAction::Damage {
@@ -211,7 +205,7 @@ mod tests {
             ]
         }"#;
 
-        let maybe_battle = Battle::parse_from_str(data, None);
+        let maybe_battle = Battle::parse_from_str(data);
 
         assert!(maybe_battle.is_err());
         assert_eq!(

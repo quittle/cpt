@@ -37,17 +37,17 @@ async fn server_main<T>(server: actix_web::dev::Server) -> std::io::Result<()> {
 impl<T: Sync + Send + 'static> Server<T> {
     pub fn new(
         server_state: Arc<Mutex<T>>,
-        additional_static_asset_directory: &Path,
+        additional_static_asset_directory: Option<&Path>,
     ) -> Result<Server<T>, std::io::Error>
 where {
         let host = "0.0.0.0";
         let port = 8000;
         const STATIC_HOSTING_DIR: &str = concat!(env!("OUT_DIR"), "/static");
-        let additional_static_asset_directory = additional_static_asset_directory.to_path_buf();
-        println!("Hosting {:?}", additional_static_asset_directory);
+        let additional_static_asset_directory =
+            additional_static_asset_directory.map(Path::to_path_buf);
 
         let server: actix_web::dev::Server = HttpServer::new(move || {
-            App::new()
+            let mut app = App::new()
                 .app_data(web::Data::new(server_state.clone()))
                 .wrap(
                     ErrorHandlers::new().default_handler(|service_response: ServiceResponse| {
@@ -64,12 +64,13 @@ where {
                 )
                 .service(handle_act)
                 .service(handle_info)
-                .service(handle_sse)
-                .service(
-                    actix_files::Files::new("/ref", additional_static_asset_directory.clone())
-                        .use_etag(true),
-                )
-                .service(actix_files::Files::new("/", STATIC_HOSTING_DIR).use_etag(true))
+                .service(handle_sse);
+            if let Some(dir) = &additional_static_asset_directory {
+                app = app.service(actix_files::Files::new("/ref", dir.clone()).use_etag(true));
+            }
+            // Must come after the additional directory to ensure resolution
+            app = app.service(actix_files::Files::new("/", STATIC_HOSTING_DIR).use_etag(true));
+            app
         })
         .disable_signals()
         .bind((host, port))

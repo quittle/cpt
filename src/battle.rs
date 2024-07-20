@@ -36,7 +36,7 @@ pub struct Battle {
     pub cards: HashMap<CardId, Card>,
     pub default_turn_actions: u8,
     #[serde(skip)]
-    pub asset_directory: PathBuf,
+    pub asset_directory: Option<PathBuf>,
 }
 
 unsafe impl Sync for Battle {}

@@ -22,15 +22,16 @@ impl Battle {
         asset_directory: Option<PathBuf>,
         random_provider: Box<dyn RandomProvider>,
     ) -> Result<Self, String> {
-        let battle = battle_file::Battle::parse_from_str(data, asset_directory)?;
+        let battle = battle_file::Battle::parse_from_str(data)?;
         let max_team_size = battle
             .teams
             .iter()
             .map(|team| team.members.len())
             .max()
             .unwrap_or(0);
-        let canonical_asset_directory = battle.asset_directory.canonicalize().unwrap();
-        let asset_directory = canonical_asset_directory.as_path();
+        let canonical_asset_directory =
+            asset_directory.map(|path_buf| path_buf.canonicalize().unwrap());
+        let asset_directory = canonical_asset_directory.as_deref();
         Ok(Battle {
             history: vec![],
             introduction: battle.introduction,
@@ -157,7 +158,7 @@ impl Battle {
             )
             .await,
             round: 0,
-            asset_directory: battle.asset_directory,
+            asset_directory: canonical_asset_directory,
         })
     }
 }
