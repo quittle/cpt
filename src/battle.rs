@@ -4,6 +4,7 @@ use crate::{
 };
 use serde::Serialize;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 DeclareWrappedType!(TeamId, id, u64);
@@ -23,17 +24,19 @@ type StoryCard = battle_file::StoryCard;
 
 #[derive(Serialize)]
 pub struct Battle {
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     pub actors: Vec<(TeamId, Box<dyn Actor>)>,
     pub characters: HashMap<CharacterId, Character>,
     pub introduction: Option<StoryCard>,
     pub teams: Vec<Team>,
     pub history: Vec<BattleText>,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     pub random_provider: Box<dyn RandomProvider>,
     pub round: u16,
     pub cards: HashMap<CardId, Card>,
     pub default_turn_actions: u8,
+    #[serde(skip)]
+    pub asset_directory: PathBuf,
 }
 
 unsafe impl Sync for Battle {}
@@ -321,7 +324,7 @@ mod tests {
             ]
         }"#;
         let mut battle =
-            Battle::deserialize(battle_json, Box::<DefaultRandomProvider>::default()).await?;
+            Battle::deserialize(battle_json, None, Box::<DefaultRandomProvider>::default()).await?;
         assert_eq!(battle.history.len(), 0);
         assert_eq!(battle.teams.len(), 2);
         assert_eq!(battle.teams[0].name, "Team A".to_string());

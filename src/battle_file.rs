@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
 pub type LifeNumber = u64;
@@ -12,11 +14,15 @@ pub struct Battle {
     pub default_hand_size: HandSize,
     pub cards: Vec<Card>,
     pub teams: Vec<Team>,
+    #[serde(skip)]
+    pub asset_directory: PathBuf,
 }
 
 impl Battle {
-    pub fn parse_from_str(data: &str) -> Result<Self, String> {
-        let battle: Battle = serde_json::from_str(data).map_err(|err| err.to_string())?;
+    pub fn parse_from_str(data: &str, asset_directory: Option<PathBuf>) -> Result<Self, String> {
+        let mut battle: Battle =
+            serde_json::from_str::<Battle>(data).map_err(|err| err.to_string())?;
+        battle.asset_directory = asset_directory.unwrap_or_default();
 
         for (index, card) in battle.cards.iter().enumerate() {
             if card.id != index {
@@ -65,6 +71,7 @@ pub struct TeamMember {
     pub hand_size: Option<HandSize>,
     #[serde(default)]
     pub is_player: bool,
+    pub image: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -162,7 +169,7 @@ mod tests {
             ]
         }"#;
 
-        let battle: Battle = Battle::parse_from_str(data)?;
+        let battle: Battle = Battle::parse_from_str(data, None)?;
         assert_eq!(
             battle.cards[battle.teams[0].members[0].cards[0]].actions[0],
             CardAction::Damage {
@@ -204,7 +211,7 @@ mod tests {
             ]
         }"#;
 
-        let maybe_battle = Battle::parse_from_str(data);
+        let maybe_battle = Battle::parse_from_str(data, None);
 
         assert!(maybe_battle.is_err());
         assert_eq!(

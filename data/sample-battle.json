@@ -88,14 +88,16 @@
             "name": "Pirates",
             "members": [
                 {
-                    "name": "Stumpy",
+                    "name": "Long Neck",
                     "race": "Human",
+                    "image": "long-neck.png",
                     "base_health": 5,
                     "cards": [0, 2]
                 },
                 {
                     "name": "Captain Hook",
                     "race": "Human",
+                    "image": "pirate.png",
                     "base_health": 5,
                     "cards": [0, 1]
                 }

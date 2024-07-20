@@ -1,6 +1,6 @@
 import React from "react";
 import { ActionTarget, Battle, CardId, Character, CharacterId } from "./battle";
-import { getCardTarget } from "./utils";
+import { assetPath, getCardTarget } from "./utils";
 import { takeAction } from "./state";
 
 function isCardEligible(
@@ -58,6 +58,14 @@ export default function Character(props: {
                 await takeAction(draggedCard, characterId);
             }}
         >
+            {character.image ? (
+                <img
+                    src={assetPath(character.image)}
+                    style={{
+                        width: "100%",
+                    }}
+                />
+            ) : null}
             <h3>{character.name}</h3>
             {isPlayer
                 ? `Remaining actions: ${"🔵".repeat(

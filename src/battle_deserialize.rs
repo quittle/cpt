@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::{
     battle_file, web_actor::WebActor, Actor, Battle, Card, CardAction, CardId, Character,
     CharacterId, CharacterRace, DumbActor, Health, LifeNumberRange, RandomProvider, Target, Team,
@@ -17,15 +19,18 @@ fn normalize_maybe_life_number_range(
 impl Battle {
     pub async fn deserialize(
         data: &str,
+        asset_directory: Option<PathBuf>,
         random_provider: Box<dyn RandomProvider>,
     ) -> Result<Self, String> {
-        let battle = battle_file::Battle::parse_from_str(data)?;
+        let battle = battle_file::Battle::parse_from_str(data, asset_directory)?;
         let max_team_size = battle
             .teams
             .iter()
             .map(|team| team.members.len())
             .max()
             .unwrap_or(0);
+        let canonical_asset_directory = battle.asset_directory.canonicalize().unwrap();
+        let asset_directory = canonical_asset_directory.as_path();
         Ok(Battle {
             history: vec![],
             introduction: battle.introduction,
@@ -47,6 +52,7 @@ impl Battle {
                             },
                             hand: vec![],
                             remaining_actions: 0,
+                            image: member.image.clone(),
                             deck: member
                                 .cards
                                 .iter()
@@ -134,7 +140,11 @@ impl Battle {
                                                 Box::new(TerminalActor { character_id })
                                                     as Box<dyn Actor>
                                             } else {
-                                                Box::new(WebActor::new(character_id).await.unwrap())
+                                                Box::new(
+                                                    WebActor::new(character_id, asset_directory)
+                                                        .await
+                                                        .unwrap(),
+                                                )
                                                     as Box<dyn Actor>
                                             }
                                         } else {
@@ -147,6 +157,7 @@ impl Battle {
             )
             .await,
             round: 0,
+            asset_directory: battle.asset_directory,
         })
     }
 }

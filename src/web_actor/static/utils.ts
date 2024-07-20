@@ -45,3 +45,7 @@ export function getLivingEnemies(
         (character) => character.id != player
     );
 }
+
+export function assetPath(rawAssetPath: string): string {
+    return `ref/${rawAssetPath}`;
+}

@@ -6,7 +6,10 @@ use crate::{ActionResult, Actor, Battle, CharacterId};
 use actix_web_lab::sse;
 use async_trait::async_trait;
 use serde::Serialize;
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use tokio::sync::{
     mpsc::{channel, error::SendError, Receiver},
     Mutex,
@@ -26,15 +29,21 @@ pub struct WebActor {
 }
 
 impl WebActor {
-    pub async fn new(character_id: CharacterId) -> Result<Self, std::io::Error> {
+    pub async fn new(
+        character_id: CharacterId,
+        additional_asset_directory: &Path,
+    ) -> Result<Self, std::io::Error> {
         let (action_tx, action_rx) = channel(1);
 
         let event_tx = ArcEventSender::default();
 
-        let server = Server::new(Arc::new(Mutex::new(ServerState {
-            event_tx: event_tx.clone(),
-            action_tx: action_tx.clone(),
-        })))?;
+        let server = Server::new(
+            Arc::new(Mutex::new(ServerState {
+                event_tx: event_tx.clone(),
+                action_tx: action_tx.clone(),
+            })),
+            additional_asset_directory,
+        )?;
 
         Ok(Self {
             character_id,

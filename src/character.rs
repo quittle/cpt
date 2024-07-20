@@ -45,6 +45,7 @@ pub struct Character {
     pub max_health: Health,
     pub remaining_actions: u8,
     pub hand_size: HandSize,
+    pub image: Option<String>,
 }
 
 impl Character {

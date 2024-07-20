@@ -1,5 +1,5 @@
 use cpd::*;
-use std::process::ExitCode;
+use std::{path::PathBuf, process::ExitCode};
 #[cfg(feature = "terminal_ui")]
 use {std::io, termion::raw::IntoRawMode};
 
@@ -7,6 +7,7 @@ use {std::io, termion::raw::IntoRawMode};
 async fn main() -> Result<(), ExitCode> {
     let mut battle = Battle::deserialize(
         include_str!("../data/sample-battle.json"),
+        Some(PathBuf::from("data")),
         Box::<DefaultRandomProvider>::default(),
     )
     .await
