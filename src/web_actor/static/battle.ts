@@ -14,7 +14,7 @@ export interface Character {
     health: number;
     hand_size: number;
     remaining_actions: number;
-    image?: string;
+    image: string | null;
 }
 
 export interface Team {
@@ -66,6 +66,16 @@ export type StoryCardEntry = { h1: string } | { p: string };
 
 export type StoryCard = StoryCardEntry[];
 
+export type BoardItem = { Character: CharacterId };
+
+export interface Board {
+    grid: {
+        members: Array<Array<BoardItem | null>>;
+        width: number;
+        height: number;
+    };
+}
+
 export interface Battle {
     characters: Record<string, Character>;
     teams: Team[];
@@ -73,6 +83,7 @@ export interface Battle {
     history: BattleHistoryEntry[];
     round: number;
     cards: Record<string, Card>;
+    board: Board;
 }
 
 export interface BattleState {

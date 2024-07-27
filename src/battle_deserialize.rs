@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
 use crate::{
-    battle_file, web_actor::WebActor, Actor, Battle, Card, CardAction, CardId, Character,
-    CharacterId, CharacterRace, DumbActor, Health, LifeNumberRange, RandomProvider, Target, Team,
-    TeamId, TerminalActor,
+    battle_file, web_actor::WebActor, Actor, Battle, Board, BoardItem, Card, CardAction, CardId,
+    Character, CharacterId, CharacterRace, DumbActor, Health, LifeNumberRange, RandomProvider,
+    Target, Team, TeamId, TerminalActor,
 };
 use futures::future::join_all;
 
@@ -23,12 +23,34 @@ impl Battle {
         random_provider: Box<dyn RandomProvider>,
     ) -> Result<Self, String> {
         let battle = battle_file::Battle::parse_from_str(data)?;
+
+        let mut board = Board::new(battle.board.width, battle.board.height);
+
         let max_team_size = battle
             .teams
             .iter()
             .map(|team| team.members.len())
             .max()
             .unwrap_or(0);
+        {
+            for (team_index, team) in battle.teams.iter().enumerate() {
+                for (index, member) in team.members.iter().enumerate() {
+                    let (x, y) = member.location;
+                    if !board.grid.is_valid(x, y) {
+                        return Err(format!("Invalid team member position: {x}, {y}"));
+                    }
+                    // Makes strong assumptions about the way character ids are picked, incrementing in the same order of team and member
+                    if let Some(_prev_id) = board.grid.set(
+                        x,
+                        y,
+                        BoardItem::Character(CharacterId::new(team_index * max_team_size + index)),
+                    ) {
+                        return Err(format!("Multiple entries found at {x}, {y}"));
+                    }
+                }
+            }
+        }
+
         let canonical_asset_directory =
             asset_directory.map(|path_buf| path_buf.canonicalize().unwrap());
         let asset_directory = canonical_asset_directory.as_deref();
@@ -158,6 +180,7 @@ impl Battle {
             )
             .await,
             round: 0,
+            board,
             asset_directory: canonical_asset_directory,
         })
     }

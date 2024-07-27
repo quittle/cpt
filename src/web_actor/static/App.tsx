@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActionTarget,  BattleState, CardId } from "./battle";
+import { ActionTarget, BattleState, CardId } from "./battle";
 import * as messages from "./messages.js";
 import Card from "./Card.js";
 import Character from "./Character.js";
@@ -7,6 +7,7 @@ import BattleHistory from "./BattleHistory.js";
 import { getCardTarget, getLivingEnemies } from "./utils.js";
 import { takeAction } from "./state.js";
 import { StoryCard } from "./StoryCard.js";
+import { GameBoard } from "./GameBoard.js";
 
 messages.init(async () => {});
 
@@ -78,6 +79,7 @@ export default function App() {
                             />
                         ))}
                 </div>
+                <GameBoard battle={battle} />
                 <ul
                     style={{
                         listStyle: "none",

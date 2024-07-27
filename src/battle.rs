@@ -1,6 +1,6 @@
 use crate::{
-    battle_file, battle_markup, Action, ActionError, Actor, Attack, BattleText, Card, CardAction,
-    CardId, Character, CharacterId, DeclareWrappedType, Health, RandomProvider, Target,
+    battle_file, battle_markup, Action, ActionError, Actor, Attack, BattleText, Board, Card,
+    CardAction, CardId, Character, CharacterId, DeclareWrappedType, Health, RandomProvider, Target,
 };
 use serde::Serialize;
 use std::collections::HashMap;
@@ -37,6 +37,7 @@ pub struct Battle {
     pub default_turn_actions: u8,
     #[serde(skip)]
     pub asset_directory: Option<PathBuf>,
+    pub board: Board,
 }
 
 unsafe impl Sync for Battle {}
@@ -265,6 +266,7 @@ mod tests {
             "title": "Example Game",
             "description": "Example Description",
             "default_hand_size": 2,
+            "board": { "width": 2, "height": 2 },
             "cards": [
                 {
                     "id": 0,
@@ -300,13 +302,15 @@ mod tests {
                             "race": "Human",
                             "base_health": 5,
                             "cards": [0],
-                            "hand_size": 1
+                            "hand_size": 1,
+                            "location": [0, 0]
                         },
                         {
                             "name": "Member A2",
                             "race": "Human",
                             "base_health": 5,
-                            "cards": [1]
+                            "cards": [1],
+                            "location": [0, 1]
                         }
                     ]
                 },
@@ -317,7 +321,8 @@ mod tests {
                             "name": "Member B1",
                             "race": "Human",
                             "base_health": 15,
-                            "cards": [0]
+                            "cards": [0],
+                            "location": [1, 0]
                         }
                     ]
                 }

@@ -11,6 +11,10 @@
             "p": "Ahh, look at this. A ship boldly flying the jolly roger appears on the horizon. This should be fun."
         }
     ],
+    "board": {
+        "width": 6,
+        "height": 6
+    },
     "cards": [
         {
             "id": 0,
@@ -92,14 +96,16 @@
                     "race": "Human",
                     "image": "long-neck.png",
                     "base_health": 5,
-                    "cards": [0, 2]
+                    "cards": [0, 2],
+                    "location": [0, 0]
                 },
                 {
                     "name": "Captain Hook",
                     "race": "Human",
                     "image": "pirate.png",
                     "base_health": 5,
-                    "cards": [0, 1]
+                    "cards": [0, 1],
+                    "location": [0, 1]
                 }
             ]
         },
@@ -110,9 +116,11 @@
                     "name": "Captain",
                     "is_player": true,
                     "race": "Human",
+                    "image": "captain.png",
                     "base_health": 15,
                     "hand_size": 2,
-                    "cards": [0, 1, 2, 3, 4]
+                    "cards": [0, 1, 2, 3, 4],
+                    "location": [5, 5]
                 }
             ]
         }

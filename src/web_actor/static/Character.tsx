@@ -62,7 +62,7 @@ export default function Character(props: {
                 <img
                     src={assetPath(character.image)}
                     style={{
-                        width: "100%",
+                        width: isPlayer ? "20%" : "100%",
                     }}
                 />
             ) : null}

@@ -8,6 +8,7 @@ pub type HandSize = u8;
 pub struct Battle {
     pub title: String,
     pub description: String,
+    pub board: Board,
     pub introduction: Option<StoryCard>,
     pub default_hand_size: HandSize,
     pub cards: Vec<Card>,
@@ -50,6 +51,12 @@ pub enum StoryCardEntry {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Board {
+    pub width: usize,
+    pub height: usize,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Team {
     pub name: String,
     pub members: Vec<TeamMember>,
@@ -66,6 +73,7 @@ pub struct TeamMember {
     #[serde(default)]
     pub is_player: bool,
     pub image: Option<String>,
+    pub location: (usize, usize),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -133,6 +141,7 @@ mod tests {
                 { "h1": "Heading" },
                 { "p": "Paragraph" }
             ],
+            "board": { "width": 1, "height": 1 },
             "cards": [
                 {
                     "id": 0,
@@ -156,7 +165,8 @@ mod tests {
                             "name": "Member 1",
                             "race": "Human",
                             "base_health": 10,
-                            "cards": [0]
+                            "cards": [0],
+                            "location": [0, 0]
                         }
                     ]
                 }
@@ -182,6 +192,7 @@ mod tests {
             "description": "Example Description",
             "default_hand_size": 5,
             "cards": [],
+            "board": { "width": 1, "height": 1 },
             "teams": [
                 {
                     "name": "Team A",
@@ -191,14 +202,16 @@ mod tests {
                             "is_player": true,
                             "race": "Human",
                             "base_health": 10,
-                            "cards": []
+                            "cards": [],
+                            "location": [0, 0]
                         },
                         {
                             "name": "Member 2",
                             "is_player": true,
                             "race": "Human",
                             "base_health": 10,
-                            "cards": []
+                            "cards": [],
+                            "location": [0, 0]
                         }
                     ]
                 }
