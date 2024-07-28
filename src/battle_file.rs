@@ -94,9 +94,9 @@ pub enum Target {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(untagged)]
-pub enum MaybeLifeNumberRange {
-    Range(LifeNumber, LifeNumber),
-    Absolute(LifeNumber),
+pub enum MaybeU64Range {
+    Range(u64, u64),
+    Absolute(u64),
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
@@ -104,15 +104,19 @@ pub enum MaybeLifeNumberRange {
 pub enum CardAction {
     Damage {
         target: Target,
-        amount: MaybeLifeNumberRange,
+        amount: MaybeU64Range,
     },
     Heal {
         target: Target,
-        amount: MaybeLifeNumberRange,
+        amount: MaybeU64Range,
     },
     GainAction {
         target: Target,
-        amount: u8,
+        amount: MaybeU64Range,
+    },
+    Move {
+        target: Target,
+        amount: MaybeU64Range,
     },
 }
 
@@ -178,7 +182,7 @@ mod tests {
             battle.cards[battle.teams[0].members[0].cards[0]].actions[0],
             CardAction::Damage {
                 target: Target::Others,
-                amount: MaybeLifeNumberRange::Absolute(123),
+                amount: MaybeU64Range::Absolute(123),
             }
         );
 

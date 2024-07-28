@@ -43,9 +43,10 @@ pub struct Character {
     pub deck: Vec<CardId>,
     pub health: Health,
     pub max_health: Health,
-    pub remaining_actions: u8,
+    pub remaining_actions: u64,
     pub hand_size: HandSize,
     pub image: Option<String>,
+    pub movement: u64,
 }
 
 impl Character {
@@ -62,8 +63,12 @@ impl Character {
             .collect();
     }
 
-    pub fn get_default_turn_actions(&self) -> Option<u8> {
+    pub fn get_default_turn_actions(&self) -> Option<u64> {
         None
+    }
+
+    pub fn get_default_movement(&self) -> u64 {
+        0
     }
 
     pub fn heal(&mut self, healing: Health) {

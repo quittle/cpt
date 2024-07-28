@@ -15,6 +15,7 @@ export interface Character {
     hand_size: number;
     remaining_actions: number;
     image: string | null;
+    movement: number;
 }
 
 export interface Team {

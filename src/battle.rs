@@ -34,7 +34,7 @@ pub struct Battle {
     pub random_provider: Box<dyn RandomProvider>,
     pub round: u16,
     pub cards: HashMap<CardId, Card>,
-    pub default_turn_actions: u8,
+    pub default_turn_actions: u64,
     #[serde(skip)]
     pub asset_directory: Option<PathBuf>,
     pub board: Board,
@@ -176,9 +176,19 @@ impl Battle {
                             target_character.heal(Health::new(value));
                         }
                         CardAction::GainAction { amount, .. } => {
+                            let value = amount.resolve(self.random_provider.as_ref());
+                            history_entry.extend(battle_markup![format!(
+                                "Gained {} action{}. ",
+                                value,
+                                if value != 1 { "s" } else { "" }
+                            )]);
+                            target_character.remaining_actions += value;
+                        }
+                        CardAction::Move { amount, .. } => {
+                            let value = amount.resolve(self.random_provider.as_ref());
                             history_entry
-                                .extend(battle_markup![format!("Gained {} action. ", amount)]);
-                            target_character.remaining_actions += *amount;
+                                .extend(battle_markup![format!("Moved {} spaces. ", value)]);
+                            target_character.movement += value;
                         }
                     }
                 }
@@ -204,6 +214,7 @@ impl Battle {
             character.remaining_actions = character
                 .get_default_turn_actions()
                 .unwrap_or(self.default_turn_actions);
+            character.movement = character.get_default_movement();
 
             if character.is_dead() {
                 continue;

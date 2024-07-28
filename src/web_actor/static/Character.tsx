@@ -73,6 +73,9 @@ export default function Character(props: {
                   )}`
                 : null}
             <div>
+                Movement: <b>{character.movement}</b>
+            </div>
+            <div>
                 Health: <b>{character.health}</b>
             </div>
         </div>

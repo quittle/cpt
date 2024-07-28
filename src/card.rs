@@ -7,9 +7,9 @@ DeclareWrappedType!(CardId, id, battle_file::CardId);
 pub type LifeNumber = battle_file::LifeNumber;
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
-pub struct LifeNumberRange(pub LifeNumber, pub LifeNumber);
+pub struct U64Range(pub u64, pub u64);
 
-impl LifeNumberRange {
+impl U64Range {
     pub fn resolve(&self, random_provider: &dyn RandomProvider) -> LifeNumber {
         random_provider.pick_linear_u64(self.0, self.1)
     }
@@ -31,18 +31,10 @@ impl Target {
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum CardAction {
-    Damage {
-        target: Target,
-        amount: LifeNumberRange,
-    },
-    Heal {
-        target: Target,
-        amount: LifeNumberRange,
-    },
-    GainAction {
-        target: Target,
-        amount: u8,
-    },
+    Damage { target: Target, amount: U64Range },
+    Heal { target: Target, amount: U64Range },
+    GainAction { target: Target, amount: U64Range },
+    Move { target: Target, amount: U64Range },
 }
 
 impl CardAction {
@@ -51,6 +43,7 @@ impl CardAction {
             Self::Damage { target, .. } => target,
             Self::Heal { target, .. } => target,
             Self::GainAction { target, .. } => target,
+            Self::Move { target, .. } => target,
         }
     }
 }

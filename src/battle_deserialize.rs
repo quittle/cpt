@@ -2,17 +2,15 @@ use std::path::PathBuf;
 
 use crate::{
     battle_file, web_actor::WebActor, Actor, Battle, Board, BoardItem, Card, CardAction, CardId,
-    Character, CharacterId, CharacterRace, DumbActor, Health, LifeNumberRange, RandomProvider,
-    Target, Team, TeamId, TerminalActor,
+    Character, CharacterId, CharacterRace, DumbActor, Health, RandomProvider, Target, Team, TeamId,
+    TerminalActor, U64Range,
 };
 use futures::future::join_all;
 
-fn normalize_maybe_life_number_range(
-    life_number_range: &battle_file::MaybeLifeNumberRange,
-) -> LifeNumberRange {
+fn normalize_maybe_u64_range(life_number_range: &battle_file::MaybeU64Range) -> U64Range {
     match *life_number_range {
-        battle_file::MaybeLifeNumberRange::Absolute(value) => LifeNumberRange(value, value),
-        battle_file::MaybeLifeNumberRange::Range(low, high) => LifeNumberRange(low, high),
+        battle_file::MaybeU64Range::Absolute(value) => U64Range(value, value),
+        battle_file::MaybeU64Range::Range(low, high) => U64Range(low, high),
     }
 }
 
@@ -86,6 +84,7 @@ impl Battle {
                                 member.max_health.unwrap_or(member.base_health),
                             ),
                             hand_size: member.hand_size.unwrap_or(battle.default_hand_size),
+                            movement: 0,
                         },
                     )
                 })
@@ -113,19 +112,25 @@ impl Battle {
                                     battle_file::CardAction::Damage { target, amount } => {
                                         CardAction::Damage {
                                             target: map_target(target),
-                                            amount: normalize_maybe_life_number_range(amount),
+                                            amount: normalize_maybe_u64_range(amount),
                                         }
                                     }
                                     battle_file::CardAction::Heal { target, amount } => {
                                         CardAction::Heal {
                                             target: map_target(target),
-                                            amount: normalize_maybe_life_number_range(amount),
+                                            amount: normalize_maybe_u64_range(amount),
                                         }
                                     }
                                     battle_file::CardAction::GainAction { target, amount } => {
                                         CardAction::GainAction {
                                             target: map_target(target),
-                                            amount: *amount,
+                                            amount: normalize_maybe_u64_range(amount),
+                                        }
+                                    }
+                                    battle_file::CardAction::Move { target, amount } => {
+                                        CardAction::Move {
+                                            target: map_target(target),
+                                            amount: normalize_maybe_u64_range(amount),
                                         }
                                     }
                                 })

@@ -85,6 +85,19 @@
                     "amount": 1
                 }
             ]
+        },
+        {
+            "id": 5,
+            "name": "Slippery Deck",
+            "description": "Move 1 space",
+            "flavor": "Somebody forgot to mop up after the sea.",
+            "actions": [
+                {
+                    "type": "move",
+                    "target": "self",
+                    "amount": 1
+                }
+            ]
         }
     ],
     "teams": [
@@ -119,7 +132,7 @@
                     "image": "captain.png",
                     "base_health": 15,
                     "hand_size": 2,
-                    "cards": [0, 1, 2, 3, 4],
+                    "cards": [0, 1, 2, 3, 4, 5],
                     "location": [5, 5]
                 }
             ]
