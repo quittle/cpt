@@ -1,24 +1,24 @@
 let evtSource: EventSource;
 
 export function init(onConnected: () => void) {
-    evtSource = new EventSource("/sse");
-    evtSource.onopen = onConnected;
+  evtSource = new EventSource("/sse");
+  evtSource.onopen = onConnected;
 
-    evtSource.onerror = (err) => {
-        console.error("EventSource failure:", err);
-    };
+  evtSource.onerror = (err) => {
+    console.error("EventSource failure:", err);
+  };
 }
 
 export function addEventListener(
-    event: string,
-    callback: (MessageEvent) => void
+  event: string,
+  callback: (MessageEvent) => void,
 ) {
-    evtSource.addEventListener(event, callback);
+  evtSource.addEventListener(event, callback);
 }
 
 export function removeEventListener(
-    event: string,
-    callback: (MessageEvent) => void
+  event: string,
+  callback: (MessageEvent) => void,
 ) {
-    evtSource.removeEventListener(event, callback);
+  evtSource.removeEventListener(event, callback);
 }

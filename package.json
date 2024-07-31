@@ -6,6 +6,8 @@
         "build": "NODE_ENV=development vite build --config=vite.config.js ./src/web_actor/static",
         "lint": "eslint ./src/web_actor/static",
         "lint-fix": "eslint --fix ./src/web_actor/static",
+        "format": "prettier --check ./src/web_actor/static",
+        "format-fix": "prettier --write ./src/web_actor/static",
         "build-server": "NODE_ENV=development vite build --config=vite.config.js --watch ./src/web_actor/static"
     },
     "devDependencies": {
@@ -16,7 +18,7 @@
         "eslint": "^8.57.0",
         "eslint-plugin-react": "^7.34.4",
         "globals": "^15.8.0",
-        "prettier": "^3.3.2",
+        "prettier": "^3.3.3",
         "typescript-eslint": "^7.16.1",
         "vite": "^5.3.1"
     },
