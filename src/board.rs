@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::{CharacterId, Grid, GridDimension};
 
-#[derive(Serialize)]
+#[derive(Serialize, PartialEq)]
 pub enum BoardItem {
     Character(CharacterId),
 }
@@ -17,5 +17,9 @@ impl Board {
         Self {
             grid: Grid::new(width, height),
         }
+    }
+
+    pub fn find(&self, board_item: BoardItem) -> Option<(GridDimension, GridDimension)> {
+        self.grid.find(|entry| entry == &board_item)
     }
 }

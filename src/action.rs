@@ -6,6 +6,7 @@ use crate::*;
 pub enum Action {
     Pass,
     Act(CardId, CharacterId),
+    Move(CharacterId, GridLocation),
 }
 
 #[derive(Debug)]

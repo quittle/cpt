@@ -1,7 +1,7 @@
 import React from "react";
 import { ActionTarget, Battle, CardId, Character, CharacterId } from "./battle";
 import { assetPath, getCardTarget } from "./utils";
-import { takeAction } from "./state";
+import { pass, takeAction } from "./state";
 
 function isCardEligible(
     isPlayer: boolean,
@@ -65,6 +65,19 @@ export default function Character(props: {
                         width: isPlayer ? "20%" : "100%",
                     }}
                 />
+            ) : null}
+            {isPlayer ? (
+                <button
+                    style={{
+                        fontSize: "2em",
+                        padding: "1em",
+                    }}
+                    onClick={async () => {
+                        await pass();
+                    }}
+                >
+                    Pass
+                </button>
             ) : null}
             <h3>{character.name}</h3>
             {isPlayer

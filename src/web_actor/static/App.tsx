@@ -79,7 +79,7 @@ export default function App() {
                             />
                         ))}
                 </div>
-                <GameBoard battle={battle} />
+                <GameBoard battleState={battleState} />
                 <ul
                     style={{
                         listStyle: "none",

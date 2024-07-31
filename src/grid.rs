@@ -9,6 +9,19 @@ pub struct Grid<T> {
     height: GridDimension,
 }
 
+#[derive(Debug)]
+pub struct GridLocation {
+    pub x: GridDimension,
+    pub y: GridDimension,
+}
+
+impl GridLocation {
+    pub fn is_adjacent(&self, other: &GridLocation) -> bool {
+        (self.x == other.x && (self.y == other.y - 1 || self.y == other.y + 1))
+            || (self.y == other.y && (self.x == other.x - 1 || self.x == other.y + 1))
+    }
+}
+
 impl<T> Grid<T> {
     pub fn new(width: GridDimension, height: GridDimension) -> Self {
         let mut members: Vec<Vec<Option<T>>> = Vec::with_capacity(height);
@@ -32,6 +45,22 @@ impl<T> Grid<T> {
 
     pub fn height(&self) -> GridDimension {
         self.height
+    }
+
+    pub fn find<F>(&self, predicate: F) -> Option<(GridDimension, GridDimension)>
+    where
+        F: Fn(&T) -> bool,
+    {
+        for (y, row) in self.members.iter().enumerate() {
+            for (x, item) in row.iter().enumerate() {
+                if let Some(item) = item {
+                    if predicate(item) {
+                        return Some((x, y));
+                    }
+                }
+            }
+        }
+        None
     }
 
     pub fn get(&self, x: GridDimension, y: GridDimension) -> Option<&T> {

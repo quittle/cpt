@@ -1,6 +1,7 @@
 use crate::{
-    battle_file, battle_markup, Action, ActionError, Actor, Attack, BattleText, Board, Card,
-    CardAction, CardId, Character, CharacterId, DeclareWrappedType, Health, RandomProvider, Target,
+    battle_file, battle_markup, Action, ActionError, Actor, Attack, BattleText, Board, BoardItem,
+    Card, CardAction, CardId, Character, CharacterId, DeclareWrappedType, GridLocation, Health,
+    RandomProvider, Target,
 };
 use serde::Serialize;
 use std::collections::HashMap;
@@ -126,6 +127,23 @@ impl Battle {
                     " took no action",
                 ]);
             }
+            Action::Move(target, location) => {
+                if actor != &target || character.movement == 0 {
+                    return false;
+                }
+
+                if let Some((x, y)) = self.board.find(BoardItem::Character(target)) {
+                    if location.is_adjacent(&GridLocation { x, y }) {
+                        self.characters.get_mut(&target).unwrap().movement -= 1;
+
+                        self.board.grid.clear(x, y);
+                        self.board
+                            .grid
+                            .set(location.x, location.y, BoardItem::Character(target));
+                    }
+                }
+                return false;
+            }
             Action::Act(card_id, target_id) => {
                 let card = &self.cards[&card_id];
                 let actual_target = if *actor == target_id {
@@ -220,7 +238,9 @@ impl Battle {
                 continue;
             }
 
-            while self.characters[&turn.character].remaining_actions > 0 {
+            while self.characters[&turn.character].remaining_actions > 0
+                || self.characters[&turn.character].movement > 0
+            {
                 let actor: &dyn Actor = self.require_actor(&turn.character);
                 let action_result = actor.act(self).await;
                 match action_result {

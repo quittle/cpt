@@ -1,4 +1,4 @@
-use crate::{Action, ActionError, ActionFailure, ActionResult, CardId, CharacterId};
+use crate::{Action, ActionError, ActionFailure, ActionResult, CardId, CharacterId, GridLocation};
 use actix_web::{get, post, web, HttpResponse, Responder};
 use actix_web_lab::sse;
 use serde::Deserialize;
@@ -40,6 +40,51 @@ async fn handle_act(
             CardId::new(info.card_id),
             CharacterId::new(info.target_id),
         ))))
+        .await
+        .unwrap();
+    HttpResponse::Ok()
+}
+
+#[derive(Deserialize)]
+struct MoveDestination {
+    x: usize,
+    y: usize,
+}
+
+#[derive(Deserialize)]
+struct MoveParams {
+    target_id: usize,
+    to: MoveDestination,
+}
+
+#[post("/move")]
+async fn handle_move(
+    info: web::Json<MoveParams>,
+    state: web::Data<ArcServerState>,
+) -> impl Responder {
+    state
+        .lock()
+        .await
+        .action_tx
+        .send(BattleServerEvent::Action(ActionResult::Ok(Action::Move(
+            CharacterId::new(info.target_id),
+            GridLocation {
+                x: info.to.x,
+                y: info.to.y,
+            },
+        ))))
+        .await
+        .unwrap();
+    HttpResponse::Ok()
+}
+
+#[post("/pass")]
+async fn handle_pass(state: web::Data<ArcServerState>) -> impl Responder {
+    state
+        .lock()
+        .await
+        .action_tx
+        .send(BattleServerEvent::Action(ActionResult::Ok(Action::Pass)))
         .await
         .unwrap();
     HttpResponse::Ok()

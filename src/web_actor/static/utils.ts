@@ -49,3 +49,15 @@ export function getLivingEnemies(
 export function assetPath(rawAssetPath: string): string {
     return `ref/${rawAssetPath}`;
 }
+
+export interface Coordinate {
+    x: number,
+    y: number,
+}
+
+export function isAdjacent(a?: Coordinate, b?: Coordinate):  boolean {
+    if (a === undefined || b === undefined) {
+        return false;
+    }
+    return (a.x === b.x && (a.y === b.y - 1 || a.y === b.y + 1)) || (a.y === b.y && (a.x === b.x - 1 || a.x === b.x + 1));
+}
