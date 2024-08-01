@@ -3,6 +3,7 @@
 set -eu
 set -o pipefail
 
+npm ci
 npm run lint
 
 cargo fmt --all
