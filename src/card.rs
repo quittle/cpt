@@ -55,6 +55,7 @@ pub struct Card {
     pub description: String,
     pub flavor: Option<String>,
     pub actions: Vec<CardAction>,
+    pub range: u64,
 }
 
 impl Card {

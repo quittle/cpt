@@ -17,8 +17,11 @@ pub struct GridLocation {
 
 impl GridLocation {
     pub fn is_adjacent(&self, other: &GridLocation) -> bool {
-        (self.x == other.x && (self.y == other.y - 1 || self.y == other.y + 1))
-            || (self.y == other.y && (self.x == other.x - 1 || self.x == other.y + 1))
+        self.distance(other) == 1
+    }
+
+    pub fn distance(&self, other: &GridLocation) -> GridDimension {
+        (self.x).abs_diff(other.x) + (self.y).abs_diff(other.y)
     }
 }
 

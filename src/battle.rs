@@ -117,6 +117,21 @@ impl Battle {
         cur_id
     }
 
+    fn is_in_range(
+        &self,
+        range: u64,
+        character: CharacterId,
+        target_character: CharacterId,
+    ) -> bool {
+        self.board
+            .distance(
+                BoardItem::Character(character),
+                BoardItem::Character(target_character),
+            )
+            .unwrap_or(0)
+            <= range
+    }
+
     /// Attempts to carry out the action. If illegal, returns false
     fn handle_action(&mut self, actor: &CharacterId, action: Action) -> bool {
         let character = &self.characters[actor];
@@ -158,6 +173,10 @@ impl Battle {
 
                 let target_character = &self.characters[&target_id];
                 if target_character.is_dead() {
+                    return false;
+                }
+
+                if !self.is_in_range(card.range, *actor, target_id) {
                     return false;
                 }
 
@@ -303,6 +322,7 @@ mod tests {
                     "id": 0,
                     "name": "Kick",
                     "description": "Deal 123 damage",
+                    "range": 1,
                     "actions": [
                         {
                             "type": "damage",
@@ -315,6 +335,7 @@ mod tests {
                     "id": 1,
                     "name": "Punch",
                     "description": "Deal 456 damage",
+                    "range": 888,
                     "actions": [
                         {
                             "type": "damage",

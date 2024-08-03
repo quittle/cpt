@@ -23,6 +23,18 @@ impl Battle {
             if card.id != index {
                 return Err(format!("Card with id {} should be {}", card.id, index));
             }
+
+            for action in &card.actions {
+                let target = match action {
+                    CardAction::Damage { target, .. } => target,
+                    CardAction::Heal { target, .. } => target,
+                    CardAction::GainAction { target, .. } => target,
+                    CardAction::Move { target, .. } => target,
+                };
+                if target != &Target::Me && card.range.is_none() {
+                    return Err(format!("Card with id {} has an action that can target others but without a range specified", card.id));
+                }
+            }
         }
 
         let mut player_found = false;
@@ -127,6 +139,7 @@ pub struct Card {
     pub description: String,
     pub flavor: Option<String>,
     pub actions: Vec<CardAction>,
+    pub range: Option<u64>,
 }
 
 #[cfg(test)]
@@ -152,6 +165,7 @@ mod tests {
                     "name": "Kick",
                     "description": "description text",
                     "flavor": "flavor text",
+                    "range": 1,
                     "actions": [
                         {
                             "type": "damage",

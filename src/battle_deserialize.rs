@@ -105,6 +105,7 @@ impl Battle {
                             name: card.name.clone(),
                             description: card.description.clone(),
                             flavor: card.flavor.clone(),
+                            range: card.range.unwrap_or(0),
                             actions: card
                                 .actions
                                 .iter()
