@@ -1,24 +1,8 @@
 import React from "react";
-import { ActionTarget, Battle, CardId, Character, CharacterId } from "./battle";
-import { assetPath, getCardTarget } from "./utils";
+import { Battle, CardId, Character, CharacterId } from "./battle";
+import { assetPath } from "./utils";
 import { pass, takeAction } from "./state";
-
-function isCardEligible(
-  isPlayer: boolean,
-  cardId: CardId,
-  battle: Battle,
-): boolean {
-  const card = battle.cards[cardId];
-  const target = getCardTarget(card);
-  switch (target) {
-    case ActionTarget.Me:
-      return isPlayer;
-    case ActionTarget.Others:
-      return !isPlayer;
-    case ActionTarget.Any:
-      return true;
-  }
-}
+import { isCardEligible } from "./Card";
 
 export default function Character(props: {
   isPlayer: boolean;

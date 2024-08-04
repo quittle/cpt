@@ -86,7 +86,7 @@ export default function App() {
             display: "flex",
           }}
         >
-          <GameBoard battleState={battleState} />
+          <GameBoard battleState={battleState} draggedCard={dragState} />
           <ul
             style={{
               listStyle: "none",

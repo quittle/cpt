@@ -1,11 +1,16 @@
 import React, { useState } from "react";
-import { BattleState, Character } from "./battle";
+import { BattleState, CardId, Character } from "./battle";
 import { assetPath, Coordinate, isAdjacent } from "./utils";
-import { move } from "./state";
+import { move, takeAction } from "./state";
+import { isCardEligible } from "./Card";
 
-export function GameBoard(props: { battleState: BattleState }) {
+export function GameBoard(props: {
+  battleState: BattleState;
+  draggedCard: CardId | undefined;
+}) {
   const battle = props.battleState.battle;
   const [selectedSquare, setSelectedSquare] = useState<Coordinate>();
+
   return (
     <table
       style={{
@@ -32,6 +37,13 @@ export function GameBoard(props: { battleState: BattleState }) {
                 selectedSquare.y === y;
               const isPlayer =
                 props.battleState.character_id === col?.Character;
+
+              // Only ineligible if there is actively a card being dragged and that card isn't eligible.
+              const isIneligible =
+                props.draggedCard !== undefined &&
+                (character?.health == 0 ||
+                  !isCardEligible(isPlayer, props.draggedCard, battle));
+
               return (
                 <td
                   key={x}
@@ -42,6 +54,25 @@ export function GameBoard(props: { battleState: BattleState }) {
                     textAlign: "center",
                     backgroundImage: image,
                     backgroundSize: "contain",
+                    opacity: isIneligible ? 0.5 : 1,
+                  }}
+                  onDragOver={(e) => {
+                    if (props.draggedCard === undefined) {
+                      return;
+                    }
+
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = isIneligible ? "none" : "move";
+                  }}
+                  onDrop={async (_e) => {
+                    if (
+                      props.draggedCard === undefined ||
+                      character === undefined
+                    ) {
+                      return;
+                    }
+
+                    await takeAction(props.draggedCard, character.id);
                   }}
                   onClick={async () => {
                     if (isPlayer) {

@@ -1,5 +1,23 @@
 import React from "react";
-import { Card } from "./battle";
+import { ActionTarget, Battle, Card, CardId } from "./battle";
+import { getCardTarget } from "./utils";
+
+export function isCardEligible(
+  isPlayer: boolean,
+  cardId: CardId,
+  battle: Battle,
+): boolean {
+  const card = battle.cards[cardId];
+  const target = getCardTarget(card);
+  switch (target) {
+    case ActionTarget.Me:
+      return isPlayer;
+    case ActionTarget.Others:
+      return !isPlayer;
+    case ActionTarget.Any:
+      return true;
+  }
+}
 
 export default function Card(props: {
   card: Card;
