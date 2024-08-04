@@ -68,7 +68,7 @@ impl Character {
     }
 
     pub fn get_default_movement(&self) -> u64 {
-        0
+        3
     }
 
     pub fn heal(&mut self, healing: Health) {

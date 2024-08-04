@@ -9,7 +9,7 @@ import { takeAction } from "./state.js";
 import { StoryCard } from "./StoryCard.js";
 import { GameBoard } from "./GameBoard.js";
 
-messages.init(async () => {});
+messages.init();
 
 export default function App() {
   const [battleState, setBattleState] = useState<BattleState>();
@@ -57,14 +57,18 @@ export default function App() {
         <></>
       )}
       <div style={{ flexGrow: 5 }}>
-        <Character
-          isPlayer={true}
-          characterId={characterId}
-          draggedCard={dragState}
-          battle={battle}
-        />
-        <h2>Characters</h2>
-        <div style={{ display: "flex", justifyContent: "space-around" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "4em",
+          }}
+        >
+          <Character
+            isPlayer={true}
+            characterId={characterId}
+            draggedCard={dragState}
+            battle={battle}
+          />
           {Object.values(battle.characters)
             .filter((character) => character.id !== characterId)
             .map((character) => (
@@ -77,47 +81,53 @@ export default function App() {
               />
             ))}
         </div>
-        <GameBoard battleState={battleState} />
-        <ul
+        <div
           style={{
-            listStyle: "none",
             display: "flex",
-            flexDirection: "column",
-            gap: "1em",
           }}
         >
-          {battle.characters[characterId].hand.map((cardId) => {
-            const card = battle.cards[cardId];
-            const target = getCardTarget(card);
-            let defaultAction: undefined | (() => Promise<void>);
-            if (target === ActionTarget.Me) {
-              defaultAction = async () =>
-                await takeAction(card.id, characterId);
-            } else if (target === ActionTarget.Others) {
-              const enemies = getLivingEnemies(battle, characterId);
-              if (enemies.length == 1) {
+          <GameBoard battleState={battleState} />
+          <ul
+            style={{
+              listStyle: "none",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1em",
+            }}
+          >
+            {battle.characters[characterId].hand.map((cardId) => {
+              const card = battle.cards[cardId];
+              const target = getCardTarget(card);
+              let defaultAction: undefined | (() => Promise<void>);
+              if (target === ActionTarget.Me) {
                 defaultAction = async () =>
-                  await takeAction(card.id, enemies[0].id);
+                  await takeAction(card.id, characterId);
+              } else if (target === ActionTarget.Others) {
+                const enemies = getLivingEnemies(battle, characterId);
+                if (enemies.length == 1) {
+                  defaultAction = async () =>
+                    await takeAction(card.id, enemies[0].id);
+                }
               }
-            }
-            return (
-              <li key={cardId}>
-                <Card
-                  card={card}
-                  onDragStart={() => setDragState(cardId)}
-                  onDragEnd={() => setDragState(undefined)}
-                  onClick={async () => {
-                    // Take default actions when clicking buttons
-                    if (defaultAction) {
-                      await defaultAction();
-                    }
-                  }}
-                  hasDefaultAction={defaultAction !== undefined}
-                />
-              </li>
-            );
-          })}
-        </ul>
+              return (
+                <li key={cardId}>
+                  <Card
+                    card={card}
+                    onDragStart={() => setDragState(cardId)}
+                    onDragEnd={() => setDragState(undefined)}
+                    onClick={async () => {
+                      // Take default actions when clicking buttons
+                      if (defaultAction) {
+                        await defaultAction();
+                      }
+                    }}
+                    hasDefaultAction={defaultAction !== undefined}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
       <div style={{ flexGrow: 2 }}>
         <BattleHistory history={battle.history} />

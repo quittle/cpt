@@ -1,8 +1,8 @@
 let evtSource: EventSource;
 
-export function init(onConnected: () => void) {
+export function init(onConnected?: () => void) {
   evtSource = new EventSource("/sse");
-  evtSource.onopen = onConnected;
+  evtSource.onopen = onConnected ?? null;
 
   evtSource.onerror = (err) => {
     console.error("EventSource failure:", err);

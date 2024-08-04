@@ -132,7 +132,7 @@ impl Battle {
             <= range
     }
 
-    /// Attempts to carry out the action. If illegal, returns false
+    /// Attempts to carry out the action. If the action (legal or no) consumes an action, returns true
     fn handle_action(&mut self, actor: &CharacterId, action: Action) -> bool {
         let character = &self.characters[actor];
         match action {
@@ -141,6 +141,11 @@ impl Battle {
                     @id(&character.name),
                     " took no action",
                 ]);
+                let character = self.characters.get_mut(actor).unwrap();
+                character.remaining_actions = 0;
+                character.movement = 0;
+
+                true
             }
             Action::Move(target, location) => {
                 if actor != &target || character.movement == 0 {
@@ -148,16 +153,20 @@ impl Battle {
                 }
 
                 if let Some((x, y)) = self.board.find(BoardItem::Character(target)) {
-                    if location.is_adjacent(&GridLocation { x, y }) {
+                    if location.is_adjacent(&GridLocation { x, y })
+                        && !self.board.grid.is_set(location.x, location.y)
+                    {
                         self.characters.get_mut(&target).unwrap().movement -= 1;
 
                         self.board.grid.clear(x, y);
                         self.board
                             .grid
                             .set(location.x, location.y, BoardItem::Character(target));
+                        return true;
                     }
                 }
-                return false;
+
+                false
             }
             Action::Act(card_id, target_id) => {
                 let card = &self.cards[&card_id];
@@ -180,6 +189,10 @@ impl Battle {
                     return false;
                 }
 
+                if character.remaining_actions == 0 {
+                    return false;
+                }
+
                 let mut history_entry = battle_markup![
                     @id(&character.name),
                     " used ",
@@ -188,6 +201,8 @@ impl Battle {
                     @id(&target_character.name),
                     ". "
                 ];
+
+                self.characters.get_mut(actor).unwrap().remaining_actions -= 1;
 
                 for action in &card.actions {
                     // If the action specifically targets me, then force it to target the actor
@@ -235,9 +250,10 @@ impl Battle {
                 // Remove card from hand
                 let hand = &mut self.characters.get_mut(actor).unwrap().hand;
                 hand.remove(hand.iter().position(|id| id == &card_id).unwrap());
+
+                true
             }
         }
-        true
     }
 
     pub async fn advance(&mut self) -> Result<(), ExitCode> {
@@ -264,12 +280,7 @@ impl Battle {
                 let action_result = actor.act(self).await;
                 match action_result {
                     Ok(request) => {
-                        if self.handle_action(&turn.character, request) {
-                            self.characters
-                                .get_mut(&turn.character)
-                                .unwrap()
-                                .remaining_actions -= 1;
-                        }
+                        self.handle_action(&turn.character, request);
                     }
                     Err(ActionError::Failure(failure)) => {
                         println!("Error processing {}: {}", turn.character, failure.message);

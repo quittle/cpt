@@ -61,7 +61,7 @@ export default function Character(props: {
         <img
           src={assetPath(character.image)}
           style={{
-            width: isPlayer ? "20%" : "100%",
+            width: isPlayer ? "100px" : "100%",
           }}
         />
       ) : null}
@@ -70,6 +70,8 @@ export default function Character(props: {
           style={{
             fontSize: "2em",
             padding: "1em",
+            marginInlineStart: "1em",
+            verticalAlign: "top",
           }}
           onClick={async () => {
             await pass();

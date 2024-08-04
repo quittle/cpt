@@ -5,11 +5,11 @@ pub struct DumbActor {
     pub character_id: CharacterId,
 }
 
-fn pick_random_card(character: &Character, battle: &Battle) -> CardId {
-    *character
+fn pick_random_card(character: &Character, battle: &Battle) -> Option<CardId> {
+    character
         .hand
         .pick_linear(battle.random_provider.as_ref())
-        .unwrap()
+        .copied()
 }
 
 #[async_trait]
@@ -30,8 +30,9 @@ impl Actor for DumbActor {
         let character = battle.get_character(self);
         for (team_id, actor) in &battle.actors {
             if &my_team != team_id && !character.is_dead() {
-                let card_id = pick_random_card(character, battle);
-                return Ok(Action::Act(card_id, *actor.get_character_id()));
+                if let Some(card_id) = pick_random_card(character, battle) {
+                    return Ok(Action::Act(card_id, *actor.get_character_id()));
+                }
             }
         }
 
