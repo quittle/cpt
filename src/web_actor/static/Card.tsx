@@ -57,6 +57,9 @@ export default function Card(props: {
         <p>
           <i>{props.card.flavor}</i>
         </p>
+        {props.card.range > 0 ? (
+          <p style={{ textAlign: "right" }}>{props.card.range} 🏹</p>
+        ) : null}
       </div>
     </button>
   );

@@ -60,6 +60,7 @@ export interface Card {
   name: string;
   description: string;
   flavor?: string;
+  range: number;
   actions: CardAction[];
 }
 
