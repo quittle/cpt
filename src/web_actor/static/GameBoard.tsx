@@ -29,6 +29,9 @@ export function GameBoard(props: {
                 if (character.image !== null) {
                   image = `url(${assetPath(character.image)})`;
                 }
+                if (character.health == 0) {
+                  image = `url(${assetPath("skull.png")})`;
+                }
               }
               const curLocation: Coordinate = { x, y };
               const isSelectedSquare =
