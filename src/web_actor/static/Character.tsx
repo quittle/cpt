@@ -61,7 +61,7 @@ export default function Character(props: {
             await pass();
           }}
         >
-          Pass
+          End Turn
         </button>
       ) : null}
       <h3>{character.name}</h3>
