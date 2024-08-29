@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use serde::Serialize;
 
 pub type GridDimension = usize;
@@ -9,7 +11,7 @@ pub struct Grid<T> {
     height: GridDimension,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct GridLocation {
     pub x: GridDimension,
     pub y: GridDimension,
@@ -22,6 +24,39 @@ impl GridLocation {
 
     pub fn distance(&self, other: &GridLocation) -> GridDimension {
         (self.x).abs_diff(other.x) + (self.y).abs_diff(other.y)
+    }
+
+    pub fn get_surrounding(
+        &self,
+        width: GridDimension,
+        height: GridDimension,
+    ) -> Vec<GridLocation> {
+        let mut ret = vec![];
+        if self.x > 0 {
+            ret.push(GridLocation {
+                x: self.x - 1,
+                y: self.y,
+            });
+        }
+        if self.y > 0 {
+            ret.push(GridLocation {
+                x: self.x,
+                y: self.y - 1,
+            });
+        }
+        if self.x < width - 1 {
+            ret.push(GridLocation {
+                x: self.x + 1,
+                y: self.y,
+            });
+        }
+        if self.y < height - 1 {
+            ret.push(GridLocation {
+                x: self.x,
+                y: self.y + 1,
+            });
+        }
+        ret
     }
 }
 
@@ -97,11 +132,73 @@ impl<T> Grid<T> {
     pub fn is_valid(&self, x: GridDimension, y: GridDimension) -> bool {
         x < self.width && y < self.height
     }
+
+    pub fn shortest_path<F>(
+        &self,
+        from: GridLocation,
+        to: GridLocation,
+        is_open: F,
+    ) -> Option<Vec<GridLocation>>
+    where
+        F: Fn(&T) -> bool,
+    {
+        let mut track = vec![vec![u64::MAX; self.width]; self.height];
+        let mut options = VecDeque::from([from.clone()]);
+
+        track[from.y][from.x] = 0;
+
+        while let Some(cur) = options.pop_front() {
+            if cur == to {
+                break;
+            }
+
+            for loc in cur.get_surrounding(self.width, self.height) {
+                if track[loc.y][loc.x] < u64::MAX {
+                    continue;
+                }
+                if let Some(entry) = self.get(loc.x, loc.y) {
+                    if is_open(entry) {
+                        track[loc.y][loc.x] = track[cur.y][cur.x] + 1;
+                        options.push_back(loc);
+                    }
+                } else {
+                    track[loc.y][loc.x] = track[cur.y][cur.x] + 1;
+                    options.push_back(loc);
+                }
+            }
+        }
+        if track[to.y][to.x] == u64::MAX {
+            return None;
+        }
+
+        let mut cur_loc = to.clone();
+        let mut directions = vec![to.clone()];
+        while cur_loc != from {
+            let mut min_distance = track[cur_loc.y][cur_loc.x];
+            let mut next_loc = cur_loc.clone();
+            for option in cur_loc.get_surrounding(self.width, self.height) {
+                let dist = track[option.y][option.x];
+                if dist < min_distance {
+                    min_distance = dist;
+                    next_loc = option;
+                }
+            }
+            if next_loc == cur_loc {
+                return None;
+            }
+            directions.push(next_loc.clone());
+            cur_loc = next_loc;
+        }
+        directions.reverse();
+        Some(directions)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::Grid;
+
+    use super::GridLocation;
 
     #[test]
     pub fn test_grid() {
@@ -124,5 +221,56 @@ mod tests {
         assert_eq!(grid.clear(1, 1), Some('b'));
         assert_eq!(grid.get(1, 1), None);
         assert_eq!(grid.clear(1, 1), None);
+    }
+
+    #[test]
+    pub fn test_shortest_path() {
+        let mut grid = Grid::new(3, 3);
+        assert_eq!(
+            grid.shortest_path(
+                GridLocation { x: 0, y: 0 },
+                GridLocation { x: 2, y: 2 },
+                |entry| *entry == 0,
+            ),
+            Some(vec![
+                GridLocation { x: 0, y: 0 },
+                GridLocation { x: 0, y: 1 },
+                GridLocation { x: 0, y: 2 },
+                GridLocation { x: 1, y: 2 },
+                GridLocation { x: 2, y: 2 }
+            ]),
+        );
+
+        grid.set(0, 1, 1);
+        grid.set(1, 1, 1);
+        grid.set(2, 1, 0);
+        assert_eq!(
+            grid.shortest_path(
+                GridLocation { x: 0, y: 0 },
+                GridLocation { x: 0, y: 2 },
+                |entry| *entry == 0,
+            ),
+            Some(vec![
+                GridLocation { x: 0, y: 0 },
+                GridLocation { x: 1, y: 0 },
+                GridLocation { x: 2, y: 0 },
+                GridLocation { x: 2, y: 1 },
+                GridLocation { x: 2, y: 2 },
+                GridLocation { x: 1, y: 2 },
+                GridLocation { x: 0, y: 2 },
+            ]),
+            "Path around a blockade"
+        );
+
+        grid.set(2, 1, 1);
+        assert_eq!(
+            grid.shortest_path(
+                GridLocation { x: 0, y: 0 },
+                GridLocation { x: 0, y: 2 },
+                |entry| *entry == 0,
+            ),
+            None,
+            "Fully blocked"
+        );
     }
 }

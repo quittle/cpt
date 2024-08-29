@@ -152,7 +152,7 @@ impl Battle {
                     return false;
                 }
 
-                if let Some((x, y)) = self.board.find(BoardItem::Character(target)) {
+                if let Some((x, y)) = self.board.find(&BoardItem::Character(target)) {
                     if location.is_adjacent(&GridLocation { x, y })
                         && !self.board.grid.is_set(location.x, location.y)
                     {

@@ -1,6 +1,7 @@
 let evtSource: EventSource;
 
 export function init(onConnected?: () => void) {
+  console.log("Init sse");
   evtSource = new EventSource("/sse");
   evtSource.onopen = onConnected ?? null;
 
