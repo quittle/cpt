@@ -57,11 +57,6 @@ impl Actor for DumbActor {
     }
 
     async fn act(&self, battle: &Battle) -> ActionResult {
-        let should_attack = random_choice!(battle.random_provider, true, false);
-        if !should_attack {
-            return Ok(Action::Pass);
-        }
-
         let my_team = battle
             .get_team_for_actor(self)
             .unwrap_or_else(|| panic!("Failed to find team for self {}", self.character_id));
@@ -83,13 +78,18 @@ impl Actor for DumbActor {
                         BoardItem::Character(character.id),
                         BoardItem::Character(opponent.id),
                     ) {
-                        if card.range >= distance {
+                        if card.range >= distance && character.remaining_actions > 0 {
                             return Ok(Action::Act(card_id, opponent.id));
-                        } else if let Some(path) = battle.board.shortest_path(
-                            BoardItem::Character(character.id),
-                            BoardItem::Character(opponent.id),
-                        ) {
-                            return Ok(Action::Move(character.id, path[1].clone()));
+                        } else if character.movement > 0 {
+                            if let Some(path) = battle.board.shortest_path(
+                                BoardItem::Character(character.id),
+                                BoardItem::Character(opponent.id),
+                            ) {
+                                // Only try moving if there's more than 2 spots (current location and target location)
+                                if path.len() > 2 {
+                                    return Ok(Action::Move(character.id, path[1].clone()));
+                                }
+                            }
                         }
                     }
                 }

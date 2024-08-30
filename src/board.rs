@@ -39,7 +39,7 @@ impl Board {
                 GridLocation { x: bx, y: by },
                 |item| match item {
                     BoardItem::Card(_) => true,
-                    item @ BoardItem::Character(_) => &b == item,
+                    character @ BoardItem::Character(_) => &b == character,
                 },
             )
         } else {
