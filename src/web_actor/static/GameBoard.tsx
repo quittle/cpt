@@ -57,6 +57,8 @@ export function GameBoard(props: {
                     textAlign: "center",
                     backgroundImage: image,
                     backgroundSize: "contain",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "center",
                     opacity: isIneligible ? 0.5 : 1,
                   }}
                   onDragOver={(e) => {
