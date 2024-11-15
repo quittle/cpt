@@ -101,6 +101,31 @@ impl<T> Grid<T> {
         None
     }
 
+    pub fn find_in_range<F>(
+        &self,
+        location: GridLocation,
+        range: GridDimension,
+        predicate: F,
+    ) -> Vec<GridLocation>
+    where
+        F: Fn(&T) -> bool,
+    {
+        let mut ret = vec![];
+        for x in location.x - range..=location.x + range {
+            for y in location.y - range..=location.y + range {
+                if location.distance(&GridLocation { x, y }) > range {
+                    continue;
+                }
+                if let Some(value) = self.get(x, y) {
+                    if predicate(value) {
+                        ret.push(GridLocation { x, y });
+                    }
+                }
+            }
+        }
+        ret
+    }
+
     pub fn get(&self, x: GridDimension, y: GridDimension) -> Option<&T> {
         if self.is_valid(x, y) {
             self.members[y][x].as_ref()
@@ -221,6 +246,62 @@ mod tests {
         assert_eq!(grid.clear(1, 1), Some('b'));
         assert_eq!(grid.get(1, 1), None);
         assert_eq!(grid.clear(1, 1), None);
+    }
+
+    #[test]
+    pub fn test_find() {
+        let mut grid = Grid::new(3, 3);
+
+        assert_eq!(
+            grid.find(|_value| true),
+            None,
+            "Try to find anything in an empty grid",
+        );
+
+        for x in 0..3 {
+            for y in 0..3 {
+                grid.set(x, y, format!("{}{}", x, y));
+            }
+        }
+        assert_eq!(grid.find(|value| value == "12"), Some((1, 2)));
+        grid.clear(1, 2);
+        assert_eq!(
+            grid.find(|value| value == "12"),
+            None,
+            "This value was cleared and should no longer match"
+        );
+        assert_eq!(
+            grid.find(|_value| false),
+            None,
+            "Nothing is ever good enough"
+        );
+    }
+
+    #[test]
+    pub fn test_find_in_range() {
+        let mut grid = Grid::new(3, 3);
+        for x in 0..3 {
+            for y in 0..3 {
+                grid.set(x, y, format!("{}{}", x, y));
+            }
+        }
+        assert_eq!(
+            grid.find_in_range(GridLocation { x: 1, y: 1 }, 0, |_value| true),
+            vec![GridLocation { x: 1, y: 1 }],
+            "Range of 0 should only match itself"
+        );
+
+        assert_eq!(
+            grid.find_in_range(GridLocation { x: 1, y: 1 }, 1, |_value| true),
+            vec![
+                GridLocation { x: 0, y: 1 },
+                GridLocation { x: 1, y: 0 },
+                GridLocation { x: 1, y: 1 },
+                GridLocation { x: 1, y: 2 },
+                GridLocation { x: 2, y: 1 }
+            ],
+            "Range of 1 should only include directly above and to the side"
+        );
     }
 
     #[test]

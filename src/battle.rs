@@ -1,7 +1,7 @@
 use crate::{
     battle_file, battle_markup, Action, ActionError, Actor, Attack, BattleText, Board, BoardItem,
     Card, CardAction, CardId, Character, CharacterId, DeclareWrappedType, GridLocation, Health,
-    RandomProvider, Target,
+    RandomProvider, Target, U64Range,
 };
 use serde::Serialize;
 use std::collections::HashMap;
@@ -117,6 +117,27 @@ impl Battle {
         cur_id
     }
 
+    fn get_all_character_amounts_in_range(
+        &self,
+        target_id: CharacterId,
+        area: &U64Range,
+        amount: &U64Range,
+    ) -> Vec<(CharacterId, u64)> {
+        let range = area.resolve(self.random_provider.as_ref());
+        let (attack_x, attack_y) = self.board.find(&BoardItem::Character(target_id)).unwrap();
+
+        self.get_characters_in_range(
+            GridLocation {
+                x: attack_x,
+                y: attack_y,
+            },
+            range,
+        )
+        .iter()
+        .map(|id| (*id, amount.resolve(self.random_provider.as_ref())))
+        .collect()
+    }
+
     fn is_in_range(
         &self,
         range: u64,
@@ -130,6 +151,11 @@ impl Battle {
             )
             .unwrap_or(0)
             <= range
+    }
+
+    fn get_characters_in_range(&self, location: GridLocation, range: u64) -> Vec<CharacterId> {
+        self.board
+            .find_chars_in_range(location, range.try_into().unwrap())
     }
 
     /// Attempts to carry out the action. If the action (legal or no) consumes an action, returns true
@@ -215,17 +241,29 @@ impl Battle {
 
                     let target_character = self.characters.get_mut(target_id).unwrap();
                     match action {
-                        CardAction::Damage { amount, .. } => {
-                            let value = amount.resolve(self.random_provider.as_ref());
-                            history_entry.extend(battle_markup![@damage(&value), " damage. "]);
+                        CardAction::Damage { amount, area, .. } => {
+                            for (attacked_character_id, value) in
+                                self.get_all_character_amounts_in_range(*target_id, area, amount)
+                            {
+                                let attacked_character =
+                                    self.characters.get_mut(&attacked_character_id).unwrap();
 
-                            target_character.health -= Attack::new(value);
+                                history_entry.extend(battle_markup![@damage(&value), " damage to ", @id(&attacked_character.name), ". " ]);
+                                attacked_character.health -= Attack::new(value);
+                            }
                         }
-                        CardAction::Heal { amount, .. } => {
-                            let value = amount.resolve(self.random_provider.as_ref());
-                            history_entry.extend(battle_markup!["Healed ", @damage(&value), ". "]);
+                        CardAction::Heal { amount, area, .. } => {
+                            for (healed_character_id, value) in
+                                self.get_all_character_amounts_in_range(*target_id, area, amount)
+                            {
+                                let healed_character =
+                                    self.characters.get_mut(&healed_character_id).unwrap();
 
-                            target_character.heal(Health::new(value));
+                                history_entry
+                                    .extend(battle_markup!["Healed ", @damage(&value), ". "]);
+
+                                healed_character.heal(Health::new(value));
+                            }
                         }
                         CardAction::GainAction { amount, .. } => {
                             let value = amount.resolve(self.random_provider.as_ref());
@@ -267,7 +305,7 @@ impl Battle {
             character.remaining_actions = character
                 .get_default_turn_actions()
                 .unwrap_or(self.default_turn_actions);
-            character.movement = character.get_default_movement();
+            character.movement = character.default_movement;
 
             if character.is_dead() {
                 continue;

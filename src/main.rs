@@ -7,6 +7,7 @@ use {std::io, termion::raw::IntoRawMode};
 async fn main() -> Result<(), ExitCode> {
     let mut battle = Battle::deserialize(
         include_str!("../data/sample-battle.json"),
+        // include_str!("../data/mines.json"),
         Some(PathBuf::from("data")),
         Box::<DefaultRandomProvider>::default(),
     )

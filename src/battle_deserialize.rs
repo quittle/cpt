@@ -70,6 +70,7 @@ impl Battle {
                             name: member.name.clone(),
                             race: match member.race {
                                 battle_file::Race::Human => CharacterRace::Human,
+                                battle_file::Race::Machine => CharacterRace::Machine,
                             },
                             hand: vec![],
                             remaining_actions: 0,
@@ -85,6 +86,9 @@ impl Battle {
                             ),
                             hand_size: member.hand_size.unwrap_or(battle.default_hand_size),
                             movement: 0,
+                            default_movement: member
+                                .movement
+                                .unwrap_or(battle.default_movement.unwrap_or(0)),
                         },
                     )
                 })
@@ -110,18 +114,30 @@ impl Battle {
                                 .actions
                                 .iter()
                                 .map(|action| match action {
-                                    battle_file::CardAction::Damage { target, amount } => {
-                                        CardAction::Damage {
-                                            target: map_target(target),
-                                            amount: normalize_maybe_u64_range(amount),
-                                        }
-                                    }
-                                    battle_file::CardAction::Heal { target, amount } => {
-                                        CardAction::Heal {
-                                            target: map_target(target),
-                                            amount: normalize_maybe_u64_range(amount),
-                                        }
-                                    }
+                                    battle_file::CardAction::Damage {
+                                        target,
+                                        amount,
+                                        area,
+                                    } => CardAction::Damage {
+                                        target: map_target(target),
+                                        amount: normalize_maybe_u64_range(amount),
+                                        area: area
+                                            .as_ref()
+                                            .map(normalize_maybe_u64_range)
+                                            .unwrap_or(U64Range(0, 0)),
+                                    },
+                                    battle_file::CardAction::Heal {
+                                        target,
+                                        amount,
+                                        area,
+                                    } => CardAction::Heal {
+                                        target: map_target(target),
+                                        amount: normalize_maybe_u64_range(amount),
+                                        area: area
+                                            .as_ref()
+                                            .map(normalize_maybe_u64_range)
+                                            .unwrap_or(U64Range(0, 0)),
+                                    },
                                     battle_file::CardAction::GainAction { target, amount } => {
                                         CardAction::GainAction {
                                             target: map_target(target),

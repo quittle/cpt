@@ -1,0 +1,79 @@
+{
+    "title": "Mines",
+    "description": "Example Description",
+    "default_hand_size": 5,
+    "introduction": [
+        { "h1": "Mines" },
+        {
+            "p": "Have a blast, but avoid the mines!"
+        }
+    ],
+    "board": {
+        "width": 6,
+        "height": 6
+    },
+    "cards": [
+        {
+            "id": 0,
+            "name": "Explode",
+            "description": "Self-Destruct and deal 10 damage",
+            "flavor": "It'll be a blast",
+            "range": 0,
+            "actions": [
+                {
+                    "type": "damage",
+                    "target": "self",
+                    "amount": 10,
+                    "area": 1
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "name": "Poke",
+            "description": "Deal 1 damage",
+            "flavor": "I guess it'll do something",
+            "range": 1,
+            "actions": [
+                {
+                    "type": "damage",
+                    "target": "other",
+                    "amount": 1
+                }
+            ]
+        }
+    ],
+    "teams": [
+        {
+            "name": "World",
+            "members": [
+                {
+                    "name": "Mine",
+                    "race": "Machine",
+                    "image": "mine.png",
+                    "base_health": 1,
+                    "hand_size": 1,
+                    "cards": [0],
+                    "location": [2, 2],
+                    "movement": 0
+                }
+            ]
+        },
+        {
+            "name": "Hero",
+            "members": [
+                {
+                    "name": "Hero",
+                    "is_player": true,
+                    "race": "Human",
+                    "image": "captain.png",
+                    "base_health": 1,
+                    "hand_size": 1,
+                    "cards": [1],
+                    "location": [4, 3],
+                    "movement": 3
+                }
+            ]
+        }
+    ]
+}

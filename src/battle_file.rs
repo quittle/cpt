@@ -5,12 +5,14 @@ pub type CardId = usize;
 pub type HandSize = u8;
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Battle {
     pub title: String,
     pub description: String,
     pub board: Board,
     pub introduction: Option<StoryCard>,
     pub default_hand_size: HandSize,
+    pub default_movement: Option<u64>,
     pub cards: Vec<Card>,
     pub teams: Vec<Team>,
 }
@@ -57,24 +59,28 @@ pub type StoryCard = Vec<StoryCardEntry>;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
 pub enum StoryCardEntry {
     H1(String),
     P(String),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Board {
     pub width: usize,
     pub height: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Team {
     pub name: String,
     pub members: Vec<TeamMember>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct TeamMember {
     pub name: String,
     pub race: Race,
@@ -86,15 +92,19 @@ pub struct TeamMember {
     pub is_player: bool,
     pub image: Option<String>,
     pub location: (usize, usize),
+    pub movement: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub enum Race {
     Human,
+    Machine,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
 pub enum Target {
     #[serde(alias = "self")]
     Me,
@@ -106,6 +116,7 @@ pub enum Target {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(untagged)]
+#[serde(deny_unknown_fields)]
 pub enum MaybeU64Range {
     Range(u64, u64),
     Absolute(u64),
@@ -113,14 +124,17 @@ pub enum MaybeU64Range {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
 pub enum CardAction {
     Damage {
         target: Target,
         amount: MaybeU64Range,
+        area: Option<MaybeU64Range>,
     },
     Heal {
         target: Target,
         amount: MaybeU64Range,
+        area: Option<MaybeU64Range>,
     },
     GainAction {
         target: Target,
@@ -133,6 +147,7 @@ pub enum CardAction {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct Card {
     pub id: CardId,
     pub name: String,
@@ -170,7 +185,8 @@ mod tests {
                         {
                             "type": "damage",
                             "target": "others",
-                            "amount": 123
+                            "amount": 123,
+                            "area": 2
                         }
                     ]
                 }
@@ -197,6 +213,7 @@ mod tests {
             CardAction::Damage {
                 target: Target::Others,
                 amount: MaybeU64Range::Absolute(123),
+                area: Some(MaybeU64Range::Absolute(2)),
             }
         );
 

@@ -2,6 +2,7 @@
     "title": "Example Game",
     "description": "Example Description",
     "default_hand_size": 5,
+    "default_movement": 3,
     "introduction": [
         { "h1": "Spanish Armada" },
         {

@@ -31,10 +31,24 @@ impl Target {
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum CardAction {
-    Damage { target: Target, amount: U64Range },
-    Heal { target: Target, amount: U64Range },
-    GainAction { target: Target, amount: U64Range },
-    Move { target: Target, amount: U64Range },
+    Damage {
+        target: Target,
+        amount: U64Range,
+        area: U64Range,
+    },
+    Heal {
+        target: Target,
+        amount: U64Range,
+        area: U64Range,
+    },
+    GainAction {
+        target: Target,
+        amount: U64Range,
+    },
+    Move {
+        target: Target,
+        amount: U64Range,
+    },
 }
 
 impl CardAction {

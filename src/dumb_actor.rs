@@ -18,14 +18,11 @@ fn total_average_damage(card: &Card) -> u64 {
     card.actions
         .iter()
         .map(|action| match action {
-            CardAction::Damage { target, amount } => {
-                // Only care about damage that can be inflicted on others
-                if target.is_super_set(&Target::Others) {
-                    (amount.0 + amount.1) / 2
-                } else {
-                    0
-                }
-            }
+            CardAction::Damage {
+                target: _,
+                amount,
+                area: _, // TODO: Evaluate area damage
+            } => (amount.0 + amount.1) / 2,
             _ => 0,
         })
         .sum()
@@ -65,7 +62,8 @@ impl Actor for DumbActor {
         let prioritized_cards = prioritize_cards(character, battle);
         for card_id in prioritized_cards {
             let card = &battle.cards[&card_id];
-            if card.target() == Target::Me
+            if (card.target() == Target::Me
+                && total_average_damage(card) < battle.characters[&self.character_id].health.health)
                 || (card.target() == Target::Any && total_average_damage(card) == 0)
             {
                 return Ok(Action::Act(card_id, self.character_id));

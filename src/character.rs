@@ -14,6 +14,7 @@ DeclareWrappedType!(CharacterId, id, usize);
 #[derive(Serialize)]
 pub enum CharacterRace {
     Human,
+    Machine,
 }
 
 DeclareWrappedType!(Attack, damage, u64);
@@ -47,6 +48,7 @@ pub struct Character {
     pub hand_size: HandSize,
     pub image: Option<String>,
     pub movement: u64,
+    pub default_movement: u64,
 }
 
 impl Character {
@@ -65,10 +67,6 @@ impl Character {
 
     pub fn get_default_turn_actions(&self) -> Option<u64> {
         None
-    }
-
-    pub fn get_default_movement(&self) -> u64 {
-        3
     }
 
     pub fn heal(&mut self, healing: Health) {
