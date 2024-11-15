@@ -1,13 +1,21 @@
 use cpd::*;
-use std::{path::PathBuf, process::ExitCode};
+use std::{env, fs, ops::Deref, path::PathBuf, process::ExitCode};
 #[cfg(feature = "terminal_ui")]
 use {std::io, termion::raw::IntoRawMode};
 
 #[actix_web::main]
 async fn main() -> Result<(), ExitCode> {
+    let args: Vec<String> = env::args().collect();
+    let file = args
+        .get(1)
+        .map(Deref::deref)
+        .unwrap_or("sample-battle.json");
+    let file_path = format!("data/{file}");
+
+    let battle_file = fs::read_to_string(&file_path)
+        .unwrap_or_else(|_| panic!("Unable to open file: {file_path}"));
     let mut battle = Battle::deserialize(
-        include_str!("../data/sample-battle.json"),
-        // include_str!("../data/mines.json"),
+        &battle_file,
         Some(PathBuf::from("data")),
         Box::<DefaultRandomProvider>::default(),
     )
